@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Терновое королевство</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kurale&family=Nunito:wght@400;600;700;800;900&display=swap">
+<style>
+/* Layout: hero band, then a board-game map (snaking trail of glades with a hopping mascot token); each game screen is one focused card with big touch targets. Single deliberate daytime look (pink, orange and violet). */
+:root{
+  --night:#fff0f6; --bark:#ffffff; --bark2:#fbe1ef; --thorn:#e8b3d6;
+  --jade:#8b46d9; --jade-d:#6c2ec0; --gold:#c84f00; --sun:#ffc27a; --rose:#d92d4b; --ok:#1c9a61;
+  --ink:#3a1f4d; --mist:#7a5a8c; --skin:#efe2f4; --horn:#120a1a;
+  --floor:#fff3f9; --wall:#dba6ea; --paper:#ffffff; --veil:rgba(255,240,246,.92); --veil2:rgba(255,240,246,.985);
+  --display:'Kurale', Georgia, 'Times New Roman', serif;
+  --body:'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme:light;
+}
+html,body{background:var(--night);color:var(--ink)}
+body{font-family:var(--body);font-size:17px;line-height:1.45;
+  background-image:radial-gradient(1100px 480px at 85% -10%, rgba(255,170,90,.38), transparent 60%),radial-gradient(900px 500px at -10% 0%, rgba(190,130,255,.30), transparent 60%),radial-gradient(900px 600px at 50% 110%, rgba(255,120,180,.22), transparent 60%);
+  background-attachment:fixed;min-height:100%}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);font-weight:400;text-wrap:balance;margin:0}
+h1{font-size:clamp(34px,7vw,54px);line-height:1.02;color:var(--ink)}
+h2.sec{font-size:24px;color:var(--gold)}
+h3{font-size:20px}
+p{margin:0}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:800;color:var(--jade)}
+.lead{color:var(--mist);max-width:52ch;margin-top:8px}
+.mini{font-size:14px;color:var(--mist)}
+b{font-weight:800}
+
+/* Hero */
+.hero{display:flex;gap:20px;align-items:center;padding-block:8px}
+.hero > div{min-width:0;display:flex;flex-direction:column}
+.fairy{width:132px;height:132px;flex:none}
+.fairy .g1{fill:var(--jade);opacity:.16}
+.fairy .hn{fill:var(--horn);stroke:var(--thorn);stroke-width:1.5}
+.fairy .sk{fill:var(--skin)}
+.fairy .ey{stroke:var(--jade);stroke-width:3.2;stroke-linecap:round}
+.fairy .lp{stroke:var(--rose);stroke-width:2.6;fill:none;stroke-linecap:round}
+.fairy .cl{fill:var(--bark2);stroke:var(--thorn);stroke-width:1.5}
+.hero-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+@media (max-width:520px){.hero{flex-direction:column;align-items:flex-start}.fairy{width:96px;height:96px}}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--bark2);font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.pill.gold{color:var(--gold)}
+
+/* Buttons */
+.btn{border:0;border-radius:14px;padding:12px 20px;font-weight:800;font-size:17px;background:var(--bark2);color:var(--ink);transition:transform .08s, background .15s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--jade);color:#ffffff}
+.btn.primary:hover{background:var(--jade-d)}
+.btn.ghost{background:transparent;border:2px solid var(--thorn)}
+.btn.ghost:hover{border-color:var(--jade)}
+.btn.sm{padding:8px 14px;font-size:15px;border-radius:12px}
+.btn.danger{background:var(--rose);color:#ffffff}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* Station path */
+.path{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;counter-reset:st}
+.path li{counter-increment:st}
+.stn{width:100%;height:100%;display:grid;grid-template-columns:64px 1fr;grid-template-rows:auto auto;gap:4px 14px;text-align:left;border:2px solid var(--thorn);background:var(--bark);border-radius:18px;padding:14px;position:relative;transition:border-color .15s, transform .1s}
+.stn:hover:not(:disabled){border-color:var(--jade);transform:translateY(-2px)}
+.stn::before{content:counter(st);position:absolute;top:8px;right:12px;font-size:12px;font-weight:800;color:var(--mist);font-variant-numeric:tabular-nums}
+.stn .sig{grid-row:1 / 3;width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:var(--night);color:var(--jade);font-family:var(--display);font-size:24px;border:1px solid var(--thorn)}
+.stn .stn-t{display:flex;flex-direction:column;min-width:0;padding-right:14px}
+.stn .stn-t b{font-size:17px;line-height:1.2}
+.stn .stn-t small{color:var(--mist);font-size:14px;line-height:1.3;margin-top:2px}
+.stars{color:var(--gold);letter-spacing:2px;font-size:16px}
+.stars i{font-style:normal;color:var(--thorn)}
+.stn.locked{opacity:.45;cursor:not-allowed}
+.foot{color:var(--mist);font-size:14px}
+
+/* Play */
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tb-title{flex:1;min-width:0;font-family:var(--display);font-size:22px;display:flex;align-items:center;gap:10px}
+.tb-sig{color:var(--jade);font-size:18px;background:var(--bark);border:1px solid var(--thorn);border-radius:10px;padding:2px 8px}
+.tb-cr{color:var(--gold);font-weight:800;font-variant-numeric:tabular-nums}
+.prog{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:22px;height:8px;border-radius:4px;background:var(--bark2)}
+.dot.cur{background:var(--sun)}
+.dot.ok{background:var(--ok)}
+.dot.bad{background:var(--rose)}
+.card{background:var(--bark);border:2px solid var(--thorn);border-radius:22px;padding:22px;box-shadow:0 4px 0 var(--thorn)}
+.qcard{display:flex;flex-direction:column;gap:18px}
+.prompt{font-size:19px;display:flex;flex-direction:column;gap:12px}
+.big{font-size:clamp(26px,6vw,38px);font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.02em;text-align:center;padding:6px 0;overflow-wrap:anywhere}
+.hl{background:var(--sun);color:#3a2604;border-radius:8px;padding:0 6px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.opts.wide{grid-template-columns:1fr}
+.opts.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.opt{min-height:60px;border-radius:16px;border:2px solid var(--thorn);background:var(--bark2);font-size:22px;font-weight:800;padding:10px 12px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.opts.wide .opt{font-size:20px}
+.opt:hover:not(:disabled){border-color:var(--jade)}
+.opt.right{background:var(--ok);color:#ffffff;border-color:var(--ok)}
+.opt.wrong{background:var(--rose);color:#ffffff;border-color:var(--rose)}
+.opt:disabled{cursor:default}
+.fb{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.fb:empty{display:none}
+.fb.good .fb-t{color:var(--ok)}
+.fb.oops .fb-t{color:var(--rose)}
+.fb-t{font-family:var(--display);font-size:24px}
+.fb-x{color:var(--ink);background:var(--night);border-radius:14px;padding:12px 14px;max-width:62ch;font-size:17px}
+.step{font-weight:800;color:var(--gold)}
+
+/* Keypad */
+.kp{display:flex;flex-direction:column;gap:10px;align-items:center}
+.kp-disp{min-width:150px;text-align:center;font-size:40px;font-weight:900;border-radius:16px;padding:4px 18px;background:var(--night);border:2px solid var(--thorn);font-variant-numeric:tabular-nums}
+.kp-disp.empty{color:var(--thorn)}
+.kp-disp.right{border-color:var(--ok);color:var(--ok)}
+.kp-disp.wrong{border-color:var(--rose);color:var(--rose)}
+.kp-keys{display:grid;grid-template-columns:repeat(3,72px);gap:8px}
+.key{height:58px;border-radius:14px;border:0;background:var(--bark2);font-size:26px;font-weight:800}
+.key:hover:not(:disabled){background:var(--thorn)}
+.key.ok{background:var(--jade);color:#ffffff;font-size:20px}
+.key.fn{font-size:22px}
+.key:disabled{opacity:.5}
+
+/* Bags picture */
+.bags{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.bag{display:flex;flex-wrap:wrap;justify-content:center;gap:2px;width:84px;min-height:70px;padding:10px 6px 8px;border-radius:12px 12px 26px 26px;background:var(--bark2);border:2px solid var(--thorn);font-size:22px;line-height:1;position:relative}
+.bag::before{content:"";position:absolute;top:-8px;left:50%;width:30px;height:10px;transform:translateX(-50%);border:2px solid var(--thorn);border-bottom:0;border-radius:10px 10px 0 0}
+
+/* Expressions */
+.expr{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:4px;font-size:clamp(26px,6vw,36px);font-weight:900;font-variant-numeric:tabular-nums;padding-top:22px}
+.ex-p{color:var(--gold)}
+.ex-o{padding:0 4px}
+.ex-op{position:relative;border:2px dashed var(--thorn);background:var(--night);border-radius:12px;min-width:46px;height:52px;font-size:30px;font-weight:900;padding:0 6px}
+.ex-op:hover:not(:disabled){border-color:var(--jade)}
+.ex-op .ord{position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-size:16px;color:var(--night);background:var(--sun);border-radius:999px;min-width:24px;height:24px;line-height:24px;display:none}
+.ex-op.on{border-style:solid;border-color:var(--sun)}
+.ex-op.on .ord{display:block}
+.ex-op.fix .ord{background:var(--jade);display:block}
+
+/* Magic square */
+.msq{display:grid;grid-template-columns:repeat(3,76px);gap:8px;justify-content:center}
+.mc{height:76px;border-radius:14px;display:grid;place-items:center;font-size:30px;font-weight:900;font-variant-numeric:tabular-nums;background:var(--bark2);border:2px solid var(--thorn)}
+button.mc{background:var(--night);border:2px dashed var(--jade-d);color:var(--jade)}
+button.mc.sel{border-style:solid;border-color:var(--sun);box-shadow:0 0 0 3px rgba(255,210,87,.5)}
+button.mc.bad{border-color:var(--rose);color:var(--rose)}
+.msum{text-align:center;font-weight:800;color:var(--gold);font-size:18px}
+
+/* Logic grid */
+.lgwrap{overflow-x:auto}
+.lg{border-collapse:separate;border-spacing:6px;margin:0 auto}
+.lg th{font-size:14px;font-weight:800;color:var(--mist);padding:2px 4px}
+.lg th.rn{text-align:right;color:var(--ink);font-size:16px}
+.lgc{width:54px;height:48px;border-radius:12px;border:2px solid var(--thorn);background:var(--night);font-size:24px;font-weight:900}
+.lgc.y{color:var(--ok);border-color:var(--ok)}
+.lgc.n{color:var(--rose)}
+tr.badrow .lgc{box-shadow:0 0 0 2px var(--rose)}
+.clues{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+
+/* Euler */
+.eu{width:100%;max-width:420px;height:auto;margin:0 auto;display:block}
+.eu-u{fill:var(--night);stroke:var(--thorn);stroke-width:2}
+.eu-a{fill:rgba(139,70,217,.14);stroke:var(--jade);stroke-width:3}
+.eu-b{fill:rgba(255,150,60,.16);stroke:var(--gold);stroke-width:3}
+.eu-l{font:800 14px var(--body);fill:var(--ink)}
+.eu-n{font:900 26px var(--body);fill:var(--ink)}
+.eu-q{font:900 26px var(--body);fill:var(--rose)}
+.eu-chip{fill:var(--bark2);stroke:var(--gold);stroke-width:2}
+
+/* Arcade */
+.hud{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.qbig{font-size:clamp(28px,7vw,40px);font-weight:900;font-variant-numeric:tabular-nums;text-align:center;flex:1;min-width:0}
+.lives{color:var(--rose);font-size:24px;letter-spacing:3px;min-width:90px}
+.score{font-weight:800;color:var(--gold);min-width:90px;text-align:right;font-variant-numeric:tabular-nums}
+.stage{position:relative;display:flex;justify-content:center;background:var(--bark);border:2px solid var(--thorn);border-radius:20px;padding:8px;overflow:hidden}
+.stage canvas{display:block;border-radius:12px;max-width:100%;touch-action:none}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px;background:var(--veil);font-size:18px}
+.overlay p{max-width:42ch}
+.dpad{display:grid;grid-template-columns:repeat(3,68px);grid-template-rows:repeat(2,58px);gap:8px;justify-content:center}
+.dpad button{border:0;border-radius:14px;background:var(--bark2);font-size:26px;touch-action:none}
+.dpad button:active{background:var(--thorn)}
+.dpad .u{grid-column:2}
+.dpad .l{grid-column:1;grid-row:2}
+.dpad .d{grid-column:2;grid-row:2}
+.dpad .r{grid-column:3;grid-row:2}
+@media (hover:hover) and (pointer:fine){.dpad{opacity:.75}}
+.opts.four .opt{font-size:28px;min-height:68px}
+.toast{color:var(--rose)}
+
+/* End */
+.end{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.end .bigstars{font-size:54px;letter-spacing:8px;color:var(--gold)}
+.end .bigstars i{font-style:normal;color:var(--thorn)}
+.end h2{font-size:32px}
+
+/* Book */
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{border:2px solid var(--thorn);background:var(--bark);border-radius:12px;padding:8px 14px;font-weight:800}
+.tab.on{background:var(--jade);color:#ffffff;border-color:var(--jade)}
+.tbl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tbl div{background:var(--night);border-radius:12px;padding:10px 14px;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.tbl div span{color:var(--jade)}
+.tip{background:var(--bark2);border-radius:14px;padding:12px 16px}
+
+/* Adult */
+.panel{display:flex;flex-direction:column;gap:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--thorn);background:var(--night);border-radius:12px;min-width:48px;padding:8px 12px;font-weight:800;font-size:17px}
+.chip.on{background:var(--jade);color:#ffffff;border-color:var(--jade)}
+.set-row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.set-row > span{min-width:0;flex:1 1 220px}
+.set-row small{display:block;color:var(--mist);font-size:14px}
+.sw{position:relative;width:58px;height:32px;border-radius:999px;border:0;background:var(--bark2);flex:none}
+.sw::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--mist);transition:left .15s}
+.sw.on{background:var(--jade-d)}
+.sw.on::after{left:30px;background:#ffffff}
+input.txt{background:var(--night);border:2px solid var(--thorn);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;width:min(100%,280px)}
+.heatwrap{overflow-x:auto}
+.heat{border-collapse:separate;border-spacing:3px;font-variant-numeric:tabular-nums}
+.heat th{font-size:13px;color:var(--mist);padding:2px 6px}
+.heat td{width:44px;height:38px;border-radius:8px;text-align:center;font-size:13px;font-weight:800;background:var(--night);color:var(--mist)}
+.heat td.g{background:rgba(98,227,166,.75);color:#0f2a1d}
+.heat td.m{background:rgba(243,201,108,.8);color:#3a2604}
+.heat td.b{background:rgba(255,125,157,.85);color:#ffffff}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--mist)}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+.stlist{display:grid;grid-template-columns:1fr auto auto;gap:6px 16px;font-size:15px;font-variant-numeric:tabular-nums}
+.stlist .h{color:var(--mist);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.mlist{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.mlist em{font-style:normal;color:var(--rose)}
+.mlist strong{color:var(--ok)}
+.method{display:flex;flex-direction:column;gap:12px;max-width:68ch}
+.method h3{color:var(--gold);margin-top:6px}
+.method ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+details.card summary{cursor:pointer;font-family:var(--display);font-size:22px;color:var(--gold)}
+details.card[open] summary{margin-bottom:12px}
+.boss{display:flex;align-items:center;gap:14px}
+.boss svg{width:64px;height:64px;flex:none}
+.boss .sh{fill:#0b0610;stroke:var(--rose);stroke-width:2}
+.boss .se{fill:var(--rose)}
+.hp{flex:1;height:16px;border-radius:999px;background:var(--bark2);overflow:hidden}
+.hp i{display:block;height:100%;background:linear-gradient(90deg,var(--rose),#ff9d6b);transition:width .4s}
+
+@media (max-width:420px){
+  .kp-keys{grid-template-columns:repeat(3,64px)}
+  .msq{grid-template-columns:repeat(3,68px)}
+  .mc{height:68px}
+  .card{padding:16px}
+  .opts.three .opt{font-size:22px}
+}
+
+.badges{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bdg{display:inline-flex;align-items:center;gap:6px;background:var(--bark);border:2px solid var(--thorn);border-radius:999px;padding:3px 12px 3px 6px;font-weight:800;font-size:14px}
+.tip p{margin:0}.tip p+p{margin-top:6px}
+.rgrid{display:grid;gap:3px;width:100%;max-width:340px;margin:0 auto;touch-action:none;user-select:none;-webkit-user-select:none}
+.rc{aspect-ratio:1;border-radius:6px;background:var(--bark2);border:1px solid var(--thorn)}
+.rc.on{background:var(--sun);border-color:var(--gold)}
+.rgrid.draw .rc{cursor:crosshair}
+.holes{display:grid;grid-template-columns:repeat(3,minmax(0,104px));gap:12px;justify-content:center;width:100%}
+.hole{aspect-ratio:1;border-radius:50%;background:var(--bark2);border:3px solid var(--thorn);font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;color:#ffffff;touch-action:manipulation;padding:0}
+.hole.up{background:#c98f5c;border-color:#8a5a2b}
+.hole.hit{background:var(--ok);border-color:var(--ok)}
+.hole.miss{background:var(--rose);border-color:var(--rose)}
+.memo{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-width:480px;margin:0 auto;width:100%}
+.mcard{aspect-ratio:1;border-radius:14px;border:2px solid var(--jade-d);background:repeating-linear-gradient(45deg,var(--jade) 0 10px,var(--jade-d) 10px 20px);font-size:clamp(17px,4.6vw,24px);font-weight:900;font-variant-numeric:tabular-nums;padding:2px;color:var(--ink)}
+.mcard span{visibility:hidden}
+.mcard.open{background:var(--bark);border-color:var(--sun)}
+.mcard.open span{visibility:visible}
+.mcard.done{border-color:var(--ok);background:var(--bark);opacity:.75}
+.lane{position:relative;width:100%;height:240px;border-radius:12px;background:linear-gradient(var(--bark2),var(--bark));overflow:hidden}
+.fcard{position:absolute;top:0;min-width:72px;height:56px;border-radius:14px;background:var(--bark);border:3px solid var(--jade);display:grid;place-items:center;font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;padding:0 10px}
+.fcard.good{background:var(--ok);border-color:var(--ok);color:#ffffff}
+.fcard.badc{background:var(--rose);border-color:var(--rose);color:#ffffff}
+.schopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.schopt{border:2px solid var(--thorn);background:var(--bark);border-radius:14px;padding:6px}
+.schopt:hover:not(:disabled){border-color:var(--jade)}
+.schopt.right{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok)}
+.schopt.wrong{border-color:var(--rose);opacity:.5}
+.schm{display:block;width:100%;height:auto}
+.sb{fill:var(--bark2);stroke:var(--thorn);stroke-width:2}
+.sb.s2{fill:var(--sun)}.sb.s3{fill:var(--bark);stroke-dasharray:5 4}.sb.s4{fill:#ffd0da}
+.st{font:800 15px var(--body);fill:var(--ink)}.st.sm2{font-size:12px}
+.sq{fill:none;stroke:var(--jade);stroke-width:2}.st.sqq{fill:var(--jade)}
+pre.rep{white-space:pre-wrap;font:600 15px var(--body);margin:0}
+.qnav{display:flex;flex-wrap:wrap;gap:8px}
+.qn{width:42px;height:42px;border-radius:50%;border:2px solid var(--thorn);background:var(--bark);font-weight:900;font-size:17px;font-variant-numeric:tabular-nums}
+.qn:hover{border-color:var(--jade)}
+.qn.ok{background:var(--ok);border-color:var(--ok);color:#ffffff}
+.qn.fix{background:var(--sun);border-color:var(--sun);color:#3a2604}
+.qn.bad{background:var(--rose);border-color:var(--rose);color:#ffffff}
+.qn.cur{box-shadow:0 0 0 3px var(--night),0 0 0 6px var(--ink)}
+.slines{display:flex;flex-direction:column;gap:6px;align-items:center;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;margin-bottom:10px}
+@media (max-width:640px){.tb-title{order:9;flex:1 1 100%}.topbar #back{margin-right:auto}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* v2: board, stickers, modal, theory, match-up, journal, console */
+.mascot{width:54px;height:54px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+.mascot svg{display:block;width:100%;height:100%}
+.mascot.big{width:108px;height:108px;flex:none}
+.stk{display:inline-block;font-size:40px;line-height:1.15;transform:rotate(var(--r,-6deg));filter:drop-shadow(2px 0 0 var(--paper)) drop-shadow(-2px 0 0 var(--paper)) drop-shadow(0 2px 0 var(--paper)) drop-shadow(0 -2px 0 var(--paper)) drop-shadow(0 3px 3px rgba(0,0,0,.45))}
+.stk.sm{font-size:22px}
+.board{position:relative}
+#trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.tr1{fill:none;stroke:var(--bark2);stroke-width:28;stroke-linecap:round;stroke-linejoin:round}
+.tr2{fill:none;stroke:var(--jade);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 18;opacity:.8}
+.node{box-shadow:0 4px 0 var(--thorn);position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;background:var(--bark);border:2px solid var(--thorn);border-radius:20px;padding:8px 6px;min-height:130px;transition:border-color .15s}
+.node:hover:not(:disabled){border-color:var(--jade)}
+.node.cur{border-color:var(--sun)}
+.node b{font-size:14px;line-height:1.15}
+.node .num{position:absolute;top:6px;right:9px;font-size:12px;font-weight:800;color:var(--mist)}
+.node.locked{opacity:.45;cursor:not-allowed}
+.token{position:absolute;transform:translate(-50%,-50%);transition:left .55s cubic-bezier(.3,1.3,.5,1),top .55s cubic-bezier(.3,1.3,.5,1);pointer-events:none;z-index:2}
+.token.hop svg{animation:hop .55s}
+@keyframes hop{50%{transform:translateY(-18px) scale(1.1)}}
+.modal{position:fixed;inset:0;z-index:50;background:var(--veil2);display:flex;justify-content:center;align-items:flex-start;padding:max(16px,6vh) 16px 24px;overflow:auto}
+.modal .card.end{width:min(520px,100%)}
+.thm{width:min(640px,100%);display:flex;flex-direction:column;gap:14px}
+.clock{display:inline-block;padding:4px 12px;border-radius:999px;background:var(--bark2);font-weight:900;font-variant-numeric:tabular-nums}
+.clock.warn{background:var(--rose);color:#ffffff}
+.toastbar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--night);font-weight:800;padding:10px 18px;border-radius:999px;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.padb{width:84px;height:56px;font-size:22px;touch-action:none}
+.th{display:flex;flex-direction:column;gap:10px}
+.th h3{color:var(--gold)}
+.th p{max-width:64ch}
+.rule{border:2px solid var(--jade);border-radius:12px;padding:10px 14px;font-size:clamp(19px,4.6vw,24px);font-weight:900;text-align:center;background:var(--night);font-variant-numeric:tabular-nums}
+.rule small{font-size:14px;color:var(--mist);font-weight:700}
+.ex{display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--bark2);border-radius:14px;padding:12px 14px}
+.ex p{min-width:0}
+.ex small{color:var(--mist)}
+.dots{display:grid;gap:6px}
+.dots i{width:18px;height:18px;border-radius:50%;background:var(--jade)}
+.th ul,.th ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+.ordx{font-weight:800;font-variant-numeric:tabular-nums}
+.ordx sup{color:var(--night);background:var(--sun);border-radius:999px;padding:0 6px;font-weight:900;font-size:12px}
+.mtiles{display:flex;flex-wrap:wrap;gap:8px;min-height:54px}
+.mtile{touch-action:none;border:2px solid var(--gold);background:var(--bark2);border-radius:12px;padding:10px 16px;font-size:20px;font-weight:900;cursor:grab;user-select:none;-webkit-user-select:none;font-variant-numeric:tabular-nums}
+.mtile.sel{background:var(--sun);color:#3a2604}
+.mtile.lifting{opacity:.3}
+.mtile.ghost{position:fixed;margin:0;transform:translate(-50%,-50%) rotate(-4deg);pointer-events:none;z-index:70;box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.mslots{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mslot{display:flex;align-items:center;gap:8px;justify-content:center;min-height:56px;border-radius:12px;border:2px dashed var(--thorn);background:var(--night);font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink);padding:6px}
+.mslot .hole{width:62px;height:34px;border-radius:8px;border:2px dashed var(--mist);flex:none}
+.mslot.over{border-color:var(--sun);background:var(--bark2)}
+.mslot.done{border-style:solid;border-color:var(--ok);color:var(--ok)}
+.shake{animation:sh .35s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.logbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+select.txt,.logbar select{background:var(--night);border:2px solid var(--thorn);border-radius:12px;padding:8px 10px;color:var(--ink);font:inherit;max-width:100%}
+select.txt{width:auto}
+.todo{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tcard{border:2px solid var(--thorn);border-radius:12px;padding:10px 12px;background:var(--night);min-width:0}
+.tcard h4{margin:0 0 4px;font-size:16px;display:flex;justify-content:space-between;gap:8px}
+.tcard p{font-size:14px;color:var(--mist)}
+.tcard.all{border-color:var(--ok)}
+.tablewrap{overflow-x:auto}
+table.log{width:100%;border-collapse:collapse;font-size:15px;min-width:640px}
+table.log th{text-align:left;font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--mist);padding:8px 10px;border-bottom:2px solid var(--thorn)}
+table.log td{padding:9px 10px;border-bottom:1px solid var(--bark2);vertical-align:top}
+table.log td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.jp{display:inline-block;font-weight:800;font-size:13px;padding:2px 9px;border-radius:999px;white-space:nowrap;border:2px solid currentColor}
+.jp.ok{color:var(--ok)}.jp.bad{color:var(--rose)}.jp.open{color:var(--gold)}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--night);border-radius:12px;padding:4px}
+.seg button{border:0;background:transparent;font-weight:800;font-size:15px;padding:8px 12px;border-radius:9px}
+.seg button[aria-pressed="true"]{background:var(--jade);color:#ffffff}
+.rlist{display:flex;flex-direction:column;gap:6px;flex:1 1 240px;min-width:0}
+.rrow{display:flex;gap:6px}
+.rrow .txt{flex:1;min-width:0;width:auto}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- state ---------- */
+const KEY='ternovoe-v2';
+const DEFP=()=>({crystals:0,st:{},facts:{},mistakes:[],book:{},pos:0});
+const DEF=()=>({set:{tables:[2,3,4],level:2,parenMul:false,seq:false,sound:true,timer:'off',secs:45,lives:3},roster:[],who:'',prof:{}});
+let S=load();
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.set){const d=DEF();return Object.assign(d,r,{set:Object.assign(d.set,r.set)});}}catch(e){}return DEF();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function PF(){const k=S.who||'_';const p=S.prof[k]||(S.prof[k]=DEFP());if(!p.book)p.book={};if(p.pos==null)p.pos=0;return p;}
+const whoName=()=>S.who||'Игрок';
+let scr='',paused=false,inGame=false,curSess=null,pauseAt=0,keyStash=null;
+
+/* ---------- utils ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const uniq=a=>[...new Set(a)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const strip=h=>{const d=document.createElement('div');d.innerHTML=h;return d.textContent.replace(/\s+/g,' ').trim();};
+const rep=(a,b)=>Array(b).fill(a).join(' + ');
+function pl(n,a,b,c){const m10=n%10,m100=n%100;if(m10===1&&m100!==11)return a;if(m10>=2&&m10<=4&&(m100<12||m100>14))return b;return c;}
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const app=document.getElementById('app');
+let cleanup=null;
+function setScreen(html,name){if(cleanup){const c=cleanup;cleanup=null;c();}scr=name||'';inGame=false;paused=false;curSess=null;keyStash=null;['pauseM','helloM'].forEach(i=>{const m=document.getElementById(i);if(m)m.remove();});window.onkeydown=null;app.innerHTML=html;window.scrollTo(0,0);}
+const PRAISE=['Верно!','Волшебно!','Точно в цель!','Отлично!','Так держать!','Умница!','Заклинание сработало!'];
+
+/* ---------- sound ---------- */
+let actx=null;
+function tone(f,d=.12,type='sine',v=.07,delay=0){if(!S.set.sound)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;const t=actx.currentTime+delay;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+d+.02);}catch(e){}}
+const sfx={ok(){tone(660,.1);tone(880,.16,'sine',.07,.09);},bad(){tone(210,.25,'triangle',.08);},win(){[523,659,784,1046].forEach((f,i)=>tone(f,.2,'sine',.07,i*.11));},tick(){tone(520,.06,'square',.025);}};
+
+/* ---------- facts (adaptive multiplication) ---------- */
+function rec(t,m,ok){const k=t+'·'+m;const f=PF().facts[k]||(PF().facts[k]={ok:0,bad:0});if(ok)f.ok++;else f.bad++;}
+let lastKey='';
+function pickFact(){
+  const T=S.set.tables.length?S.set.tables:[2];
+  for(let tries=0;tries<8;tries++){
+    const items=[];let sum=0;
+    for(const t of T)for(let m=1;m<=10;m++){const f=PF().facts[t+'·'+m]||{ok:0,bad:0};let w=1+2*f.bad-.2*f.ok;if(m===1||m===10)w*=.5;w=Math.max(.3,Math.min(6,w));items.push([t,m,w]);sum+=w;}
+    let r=Math.random()*sum,it=items[items.length-1];
+    for(const x of items){r-=x[2];if(r<=0){it=x;break;}}
+    const k=it[0]+'·'+it[1];
+    if(k!==lastKey||tries===7){lastKey=k;const t=it[0],m=it[1];const sw=Math.random()<.3&&t!==m;return{t,m,x:sw?m:t,y:sw?t:m,ans:t*m};}
+  }
+}
+function distract(f,n=3){const{t,m,ans}=f;const tier1=shuffle([t*(m+1),t*(m-1),(t+1)*m,(t-1)*m]);const tier2=shuffle([ans+1,ans-1,ans+2,ans-2,t+m,ans+10]);const out=[];for(const v of tier1.concat(tier2)){if(v>0&&v!==ans&&!out.includes(v))out.push(v);if(out.length>=n)break;}return out;}
+function logMistake(s,q,g,r){const pf=PF();pf.mistakes.unshift({d:Date.now(),s,q:String(q),g:String(g),r:String(r)});pf.mistakes=pf.mistakes.slice(0,40);}
+
+/* ---------- progress ---------- */
+function starsFor(ok,total){const r=ok/total;return r>=.9?3:r>=.7?2:r>=.4?1:0;}
+function finishStation(id,ok,total,override){const pf=PF();const stars=override!=null?override:starsFor(ok,total);const st=pf.st[id]||(pf.st[id]={stars:0,plays:0});st.plays++;st.stars=Math.max(st.stars,stars);st.last={ok,total,d:Date.now(),stars};pf.crystals+=ok;save();checkBadges();return stars;}
+const starStr=n=>'★'.repeat(n)+'<i>'+'★'.repeat(3-n)+'</i>';
+const fmtT=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const livesMax=()=>S.set.lives?S.set.lives:Infinity;
+const heartStr=n=>isFinite(n)?'♥'.repeat(Math.max(0,n))+'♡'.repeat(Math.max(0,S.set.lives-n)):'♥ ∞';
+let toastT=0;
+function toast(t){let el=document.getElementById('toastB');if(!el){el=document.createElement('div');el.id='toastB';el.className='toastbar';el.setAttribute('role','status');document.body.appendChild(el);}el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true;},2600);}
+
+/* ---------- pause ---------- */
+function pauseGame(custom){
+  if(paused||!inGame)return;paused=true;pauseAt=Date.now();keyStash=window.onkeydown;
+  const m=document.createElement('div');m.className='modal';m.id='pauseM';
+  m.innerHTML=typeof custom==='string'?custom:`<div class="card end" role="dialog" aria-modal="true" aria-labelledby="pzT"><div class="mascot">${MASCOT}</div><h2 id="pzT">Пауза</h2><p>Игра ждёт тебя. Задание спрятано, время остановлено.</p><div class="row" style="justify-content:center"><button class="btn primary" id="resume">Продолжить</button><button class="btn ghost" id="pHome">На карту</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('#resume').onclick=()=>resumeGame();const ph=m.querySelector('#pHome');if(ph)ph.onclick=()=>{resumeGame();home();};
+  window.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();resumeGame();}};
+  m.querySelector('#resume').focus();
+}
+function resumeGame(){if(!paused)return;paused=false;const m=document.getElementById('pauseM');if(m)m.remove();if(curSess)curSess.skip=(curSess.skip||0)+Date.now()-pauseAt;window.onkeydown=keyStash;keyStash=null;}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGame();});
+
+/* ---------- timer ---------- */
+function mkClock(el){
+  let t=null,mode='off',left=0,up=0,onEnd=null,running=false;
+  const render=()=>{if(mode==='off'){el.hidden=true;return;}el.hidden=false;el.textContent=(mode==='up'?'⏱ ':'⏳ ')+fmtT(mode==='up'?up:left);el.classList.toggle('warn',mode==='down'&&running&&left<=5);};
+  const tick=()=>{if(paused)return;if(mode==='up')up++;else if(running){left--;if(left<=0){left=0;running=false;render();const f=onEnd;onEnd=null;if(f)f();return;}}render();};
+  return{init(){mode=S.set.timer;up=0;if(mode!=='off')t=setInterval(tick,1000);render();},q(secs,cb){if(mode!=='down')return;left=secs;onEnd=cb;running=true;render();},hold(){running=false;onEnd=null;render();},stop(){clearInterval(t);}};
+}
+
+/* ---------- journal ---------- */
+// One row per game attempt, rewritten after every answer, so an unfinished game is kept too.
+// Saved to the artifact's shared store when the viewer offers one; otherwise to this browser.
+const LOG={remote:[],local:[],db:null,dbWrite:true,who:null,sec:'',open:'',confirm:false};
+try{LOG.local=JSON.parse(localStorage.getItem(KEY+'-log')||'[]');}catch(e){LOG.local=[];}
+const logRows=()=>{const ids=new Set(LOG.remote.map(r=>r.id));return [...LOG.remote,...LOG.local.filter(r=>!ids.has(r.id))].filter(r=>r&&r.section).sort((a,b)=>(b.upd||b.at)-(a.upd||a.at));};
+const saveLocal=()=>{try{localStorage.setItem(KEY+'-log',JSON.stringify(LOG.local.slice(0,500)));}catch(e){}};
+const sess=()=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),at:Date.now(),skip:0});
+const CHAIN=new Map();
+function localPut(id,row){const i=LOG.local.findIndex(r=>r.id===id),r={id,...row};if(i>=0)LOG.local[i]=r;else LOG.local.unshift(r);saveLocal();if(scr==='log')journal(true);}
+function jrec(sn,f){
+  const row={at:sn.at,upd:Date.now(),item:f.item,section:f.section,player:whoName(),done:!!f.done,ok:!!f.ok,miss:f.miss||0,hints:f.hints||0,result:f.result||'',detail:String(f.detail||'').slice(0,1200),sec:Math.max(0,Math.round((Date.now()-sn.at-(sn.skip||0))/1000))};
+  if(f.done&&!sn.told){sn.told=true;toast('Результат сохранён в журнал');}
+  if(LOG.db&&LOG.dbWrite){const prev=CHAIN.get(sn.id)||Promise.resolve();
+    CHAIN.set(sn.id,prev.then(()=>LOG.db.doc('results/'+sn.id).set(row)).catch(e=>{
+      if(e&&e.code==='quota_exceeded'){toast('Журнал переполнен: удалите старые записи');return;}
+      if(e&&['invalid_argument','revoked','not_granted','capability_disabled','capability_removed'].includes(e.code))LOG.dbWrite=false;
+      localPut(sn.id,row);}));return;}
+  localPut(sn.id,row);
+}
+(async()=>{try{const db=await (window.claude&&window.claude.use?window.claude.use('db'):null);if(!db)return;LOG.db=db;
+  db.collection('results').orderBy('at','desc').limit(500).onSnapshot(sn=>{LOG.remote=sn.docs.map(d=>({id:d.id,...d.data()}));if(scr==='log')journal(true);},()=>{LOG.db=null;LOG.remote=[];if(scr==='log')journal(true);});
+  if(scr==='log')journal(true);}catch(e){}})();
+
+/* ---------- stations ---------- */
+const STATIONS=[
+ {id:'bags',stk:'👝',name:'Волшебные мешочки',sub:'Что такое умножение: по a взять b раз',run:()=>runQuiz('bags',{total:8,gen:genBags})},
+ {id:'rect',stk:'🌷',name:'Грядки-прямоугольники',sub:'Площадь прямоугольника: ряды и столбцы',tmul:3,run:()=>runQuiz('rect',{total:6,gen:genRect})},
+ {id:'mirror',stk:'🪞',name:'Зеркало перестановки',sub:'Переставь множители, ×0 и ×1, найди множитель',run:()=>runQuiz('mirror',{total:10,gen:genMirror})},
+ {id:'tricks',stk:'🧠',name:'Школа приёмов',sub:'Как найти ответ, если забыла таблицу',tmul:3,run:()=>runQuiz('tricks',{total:6,gen:genTricks})},
+ {id:'maze',stk:'🗝️',name:'Лабиринт дракончика',sub:'Таблица умножения — убегай от колючек',run:startMaze},
+ {id:'catch',stk:'☁️',name:'Перехват в облаках',sub:'Лови облако с верным ответом',run:startCatch},
+ {id:'mole',stk:'🐹',name:'Ударь крота',sub:'Бей только числа из нужной таблицы',run:startMole},
+ {id:'memo',stk:'🃏',name:'Парочки-перевёртыши',sub:'Найди пару: выражение и ответ',run:startMemo},
+ {id:'sort',stk:'🧺',name:'Сортировка',sub:'Разложи числа по таблицам',run:startSort},
+ {id:'paren',stk:'🪄',name:'Заклинание скобок',sub:'Порядок действий и выражения со скобками',tmul:2,run:()=>runQuiz('paren',{total:8,gen:genParen})},
+ {id:'build',stk:'🧩',name:'Составь выражение',sub:'Расставь знаки и скобки, чтобы получить ответ',tmul:3,run:()=>runQuiz('build',{total:6,gen:genBuild})},
+ {id:'magic',stk:'🔢',name:'Магический квадрат',sub:'Суммы в строках, столбцах и диагоналях равны',tmul:5,run:()=>runQuiz('magic',{total:3,gen:genMagic})},
+ {id:'logic',stk:'🏠',name:'Загадки Цветочного города',sub:'Логические таблицы: кто где живёт',tmul:5,run:()=>runQuiz('logic',{total:3,gen:genLogic})},
+ {id:'euler',stk:'🎯',name:'Круги Эйлера',sub:'Куда попадёт число? Сколько ребят?',tmul:2,run:()=>runQuiz('euler',{total:8,gen:genEuler})},
+ {id:'kitchen',stk:'🥐',name:'Кухня Фрекен Бок',sub:'Задачи: схема, выражение, ответ',tmul:4,run:()=>runQuiz('kitchen',{total:6,gen:genKitchen})},
+ {id:'boss',stk:'🏆',name:'Турнир Тучки-Ворчуньи',sub:'Олимпиадные задачи для самых смелых',tmul:4,run:()=>runQuiz('boss',{total:8,gen:genBoss,header:bossHeader})},
+];
+const ST={};STATIONS.forEach(s=>ST[s.id]=s);
+
+const MASCOT=`<svg viewBox="0 0 100 100" aria-hidden="true">
+<path d="M28 30 L24 10 L40 24 Z" fill="#f3c96c"/><path d="M72 30 L76 10 L60 24 Z" fill="#f3c96c"/>
+<circle cx="50" cy="56" r="37" fill="#c58cf5"/>
+<ellipse cx="50" cy="72" rx="21" ry="14" fill="#f6e6ff"/>
+<circle cx="36" cy="48" r="10" fill="#fff"/><circle cx="64" cy="48" r="10" fill="#fff"/>
+<circle cx="38" cy="49" r="5" fill="#241634"/><circle cx="62" cy="49" r="5" fill="#241634"/>
+<circle cx="40" cy="47" r="1.8" fill="#fff"/><circle cx="64" cy="47" r="1.8" fill="#fff"/>
+<circle cx="24" cy="64" r="6" fill="#ff9db5" opacity=".7"/><circle cx="76" cy="64" r="6" fill="#ff9db5" opacity=".7"/>
+<circle cx="44" cy="68" r="1.8" fill="#8b46d9"/><circle cx="56" cy="68" r="1.8" fill="#8b46d9"/>
+<path d="M40 76 Q50 84 60 76" fill="none" stroke="#241634" stroke-width="3" stroke-linecap="round"/>
+</svg>`;
+function drawMascot(ctx,cx,cy,s){
+  const u=s/100;ctx.save();ctx.translate(cx-50*u,cy-54*u);ctx.scale(u,u);
+  ctx.fillStyle='#f3c96c';ctx.beginPath();ctx.moveTo(28,30);ctx.lineTo(24,10);ctx.lineTo(40,24);ctx.fill();ctx.beginPath();ctx.moveTo(72,30);ctx.lineTo(76,10);ctx.lineTo(60,24);ctx.fill();
+  ctx.fillStyle='#c58cf5';ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(50,56,37,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#f6e6ff';ctx.beginPath();ctx.ellipse(50,72,21,14,0,0,7);ctx.fill();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(36,48,10,0,7);ctx.arc(64,48,10,0,7);ctx.fill();
+  ctx.fillStyle='#241634';ctx.beginPath();ctx.arc(38,49,5,0,7);ctx.arc(62,49,5,0,7);ctx.fill();
+  ctx.strokeStyle='#241634';ctx.lineWidth=3.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(40,76);ctx.quadraticCurveTo(50,84,60,76);ctx.stroke();
+  ctx.restore();
+}
+
+function isLocked(k){if(!S.set.seq||k===0)return false;const p=PF().st[STATIONS[k-1].id];return !(p&&p.stars>0);}
+function layoutBoard(){
+  const el=document.getElementById('board');if(!el)return;
+  const w=el.clientWidth,cols=w<470?2:w<700?3:w<860?4:5,rh=156,n=STATIONS.length,cw=w/cols,nw=Math.min(142,cw-12);
+  el.style.height=Math.ceil(n/cols)*rh+'px';
+  const pts=STATIONS.map((_,k)=>{const r=Math.floor(k/cols),c=k%cols;return[cw*((r%2?cols-1-c:c)+.5),rh*(r+.5)];});
+  el.querySelectorAll('.node').forEach((b,k)=>{b.style.left=pts[k][0]+'px';b.style.top=pts[k][1]+'px';b.style.width=nw+'px';});
+  const d=pts.map((p,k)=>(k?'L':'M')+p[0]+' '+p[1]).join(' ');
+  document.getElementById('trail').innerHTML=`<path d="${d}" class="tr1"/><path d="${d}" class="tr2"/>`;
+  const k=Math.min(n-1,Math.max(0,PF().pos)),tk=document.getElementById('token');
+  tk.style.left=(pts[k][0]-nw/2+8)+'px';tk.style.top=(pts[k][1]-58)+'px';
+}
+function home(){
+  const pf=PF(),total=STATIONS.reduce((a,s)=>a+((pf.st[s.id]||{}).stars||0),0);
+  setScreen(`<div class="wrap">
+  <header class="hero"><div class="mascot big">${MASCOT}</div><div>
+    <p class="eyebrow">Тренировка для 2 класса</p>
+    <h1>Терновое королевство</h1>
+    <p class="lead">Помоги дракончику Искорке пройти волшебный лес. Нажми на любую полянку — он прыгнет туда, и начнётся игра.</p>
+    <div class="hero-row"><span class="pill">Играет: <b>${esc(whoName())}</b></span><button class="btn ghost sm" id="whoBtn">Сменить игрока</button><span class="pill gold">◆ ${pf.crystals}</span><span class="pill">★ ${total} из ${STATIONS.length*3}</span></div>
+    <div class="hero-row"><button class="btn ghost sm" id="thBtn">Теория</button><button class="btn ghost sm" id="bookBtn">Книга заклинаний</button><button class="btn ghost sm" id="logBtn">Журнал</button><button class="btn ghost sm" id="proBtn">Для супер-профессионалов</button></div>
+  </div></header>
+  <div class="badges" aria-label="Значки">${BADGES.map(([bid,ic,nm])=>(pf.badges||{})[bid]?`<span class="bdg" title="${nm}"><span class="stk sm">${ic}</span>${nm}</span>`:'').join('')||'<span class="mini">Значков пока нет. Первый дают за первую звезду.</span>'}<span class="mini">Значки: ${Object.keys(pf.badges||{}).length} из ${BADGES.length}</span></div>
+  <section class="board" id="board" aria-label="Карта игры"><svg id="trail" aria-hidden="true"></svg>
+  ${STATIONS.map((s,k)=>{const st=(pf.st[s.id]||{}).stars||0,lk=isLocked(k);return `<button class="node${lk?' locked':''}${k===pf.pos?' cur':''}" data-k="${k}" ${lk?'disabled':''} title="${esc(lk?'Откроется после предыдущей полянки':s.sub)}"><span class="num">${k+1}</span><span class="stk" style="--r:${k%2?5:-6}deg">${s.stk}</span><b>${s.name}</b><span class="stars" aria-label="${st} из 3 звёзд">${starStr(st)}</span></button>`;}).join('')}
+  <div class="token mascot" id="token">${MASCOT}</div></section>
+  <p class="foot">Сейчас в игре таблицы на ${S.set.tables.join(', ')}. Поменять их можно в разделе «Для супер-профессионалов».</p>
+  </div>`,'home');
+  layoutBoard();window.addEventListener('resize',layoutBoard);cleanup=()=>window.removeEventListener('resize',layoutBoard);
+  let going=false;
+  const SPEED=['maze','catch','mole','sort'];
+  const advise=(k,go)=>{const m=document.createElement('div');m.className='modal';m.id='helloM';
+    m.innerHTML=`<div class="card end" role="dialog" aria-modal="true" aria-labelledby="adT"><div class="mascot big">${MASCOT}</div><h2 id="adT">Сначала разберёмся, потом на скорость</h2><p>В этой игре надо отвечать быстро. Будет легче, если сначала пройти «Волшебные мешочки» и «Школу приёмов» — там можно думать сколько хочешь.</p><div class="row" style="justify-content:center"><button class="btn primary" id="adNo">Сначала потренируюсь</button><button class="btn ghost" id="adGo">Всё равно играть</button></div></div>`;
+    document.body.appendChild(m);m.querySelector('#adNo').onclick=()=>m.remove();m.querySelector('#adGo').onclick=()=>{m.remove();go();};m.querySelector('#adNo').focus();};
+  app.querySelectorAll('.node').forEach(b=>b.onclick=()=>{if(going)return;const k0=+b.dataset.k;if(SPEED.includes(STATIONS[k0].id)&&!((pf.st.bags||{}).stars>0)&&!b.dataset.ok){advise(k0,()=>{b.dataset.ok='1';b.click();});return;}going=true;const k=+b.dataset.k;pf.pos=k;save();app.querySelectorAll('.node').forEach(x=>x.classList.toggle('cur',x===b));layoutBoard();document.getElementById('token').classList.add('hop');sfx.tick();setTimeout(()=>{if(scr==='home')STATIONS[k].run();},620);});
+  $('#thBtn').onclick=theory;$('#bookBtn').onclick=book;$('#proBtn').onclick=proGate;$('#logBtn').onclick=()=>journal();$('#whoBtn').onclick=hello;
+}
+function hello(){
+  const old=document.getElementById('helloM');if(old)old.remove();
+  const m=document.createElement('div');m.className='modal';m.id='helloM';
+  m.innerHTML=`<form class="card end" role="dialog" aria-modal="true" aria-labelledby="hT"><div class="mascot big">${MASCOT}</div><h2 id="hT">Привет! Как тебя зовут?</h2>
+   <input class="txt" id="hName" maxlength="16" autocomplete="off" placeholder="Напиши имя" aria-label="Твоё имя">
+   ${S.roster.length?`<p class="mini">Или выбери себя:</p><div class="chips" style="justify-content:center">${S.roster.map(n=>`<button type="button" class="chip${n===S.who?' on':''}" data-n="${esc(n)}">${esc(n)}</button>`).join('')}</div>`:''}
+   <p class="toast" id="hErr" hidden>Напиши имя, чтобы журнал знал, кто играет.</p>
+   <button class="btn primary">Играть</button></form>`;
+  document.body.appendChild(m);
+  const setWho=n=>{S.who=n;if(!S.roster.includes(n))S.roster.push(n);save();m.remove();home();};
+  m.querySelectorAll('.chip').forEach(b=>b.onclick=()=>setWho(b.dataset.n));
+  m.querySelector('form').onsubmit=e=>{e.preventDefault();const n=m.querySelector('#hName').value.trim().replace(/\s+/g,' ').slice(0,16);if(!n){if(S.who){m.remove();return;}m.querySelector('#hErr').hidden=false;return;}setWho(n);};
+  m.querySelector('#hName').focus();
+}
+function topbar(stn,game){return `<header class="topbar"><button class="btn ghost sm" id="back">← Карта</button><div class="tb-title"><span class="stk sm">${stn.stk}</span><span>${stn.name}</span></div><span class="clock" id="clock" hidden></span>${game?`<button class="btn ghost sm" id="ruleBtn" data-id="${stn.id}">Правило</button><button class="btn ghost sm" id="pauseBtn">⏸ Пауза</button>`:''}<div class="tb-cr" title="Кристаллы">◆ ${PF().crystals}</div></header>`;}
+function bindTop(){$('#back').onclick=home;const p=$('#pauseBtn');if(p)p.onclick=()=>pauseGame();const r=$('#ruleBtn');if(r)r.onclick=()=>showRule(r.dataset.id);}
+
+function endScreen(id,ok,total,stars,note=''){
+  if(stars===3)sfx.win();
+  const stn=ST[id];
+  const msg=stars===3?'Блестяще!':stars===2?'Очень хорошо!':stars===1?'Неплохо, но можно лучше':'Попробуем ещё раз?';
+  setScreen(`<div class="wrap play">${topbar(stn)}<section class="card end">
+   <div class="bigstars" aria-label="${stars} из 3 звёзд">${starStr(stars)}</div>
+   <h2>${msg}</h2><p>Верно: <b>${ok}</b> из ${total}. Получено кристаллов: <b style="color:var(--gold)">◆ ${ok}</b></p>${note}
+   <div class="row" style="justify-content:center"><button class="btn primary" id="again">Ещё раз</button><button class="btn ghost" id="tomap">На карту</button></div>
+  </section></div>`,'end');
+  bindTop();$('#again').onclick=()=>stn.run();$('#tomap').onclick=home;$('#again').focus({preventScroll:true});
+}
+
+/* ---------- keypad ---------- */
+function digitPad(withOk){return `<div class="kp-keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" data-n="${n}">${n}</button>`).join('')}<button class="key fn" data-n="del" aria-label="Стереть">⌫</button><button class="key" data-n="0">0</button>${withOk?'<button class="key ok" data-n="ok">OK</button>':'<span></span>'}</div>`;}
+function keypad(el,onOk,max=3){
+  let v='',locked=false;
+  el.innerHTML=`<div class="kp"><div class="kp-disp empty" aria-live="polite">?</div>${digitPad(true)}</div>`;
+  const disp=el.querySelector('.kp-disp');
+  const upd=()=>{disp.textContent=v||'?';disp.classList.toggle('empty',!v);};
+  const press=n=>{if(locked)return;if(n==='del')v=v.slice(0,-1);else if(n==='ok'){if(!v)return;locked=true;el.querySelectorAll('.key').forEach(k=>k.disabled=true);const good=onOk(+v);disp.classList.add(good?'right':'wrong');if(!good)setTimeout(()=>{if(!disp.isConnected||el.closest('[data-dead]'))return;locked=false;v='';disp.classList.remove('wrong');el.querySelectorAll('.key').forEach(k=>{k.disabled=false;});upd();},700);return;}else if(v.length<max)v=(v==='0'?'':v)+n;upd();};
+  el.querySelectorAll('.key').forEach(k=>k.onclick=()=>press(k.dataset.n));
+  window.onkeydown=e=>{if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('del');else if(e.key==='Enter'){e.preventDefault();press('ok');}};
+}
+
+/* ---------- quiz engine ---------- */
+// All tasks of a station are generated up front; the child may solve them in any order, retry after a mistake and take stepped hints.
+const H1={bags:'Умножение — это сумма одинаковых слагаемых: по a взять b раз.',mirror:'От перестановки множителей произведение не меняется. Число · 1 — то же число, число · 0 — ноль.',rect:'Площадь прямоугольника: число клеток в ряду умножь на число рядов.',tricks:'Сделай первое действие приёма и запиши ответ.',paren:'Сначала скобки, потом умножение, потом по порядку слева направо.',build:'Попробуй сначала без скобок. Не выходит — поставь скобки и сначала посчитай то, что в них.',magic:'Найди линию, где известны два числа из трёх.',logic:'Начни с подсказки, где сказано точно. Поставь ✓ и вычеркни остальное в строке и столбце.',euler:'Проверь каждый признак отдельно: подходит или нет.',kitchen:'Что известно? Что надо найти? «По a взяли b раз» — это умножение.',boss:'Нарисуй задачу на листочке и попробуй на маленьких числах.'};
+function runQuiz(id,cfg){
+  const stn=ST[id],total=cfg.total;const Q=[];for(let k=0;k<total;k++)Q.push({q:cfg.gen(k),res:null,miss:0,hints:0,fb:''});
+  let cur=0;const errs=[];
+  setScreen(`<div class="wrap play">${topbar(stn,true)}<nav class="qnav" id="prog" aria-label="Задания"></nav><div id="hdr"></div>
+   <section class="card qcard"><div class="prompt" id="prompt"></div><div id="ans"></div><div id="hbox" class="tip" hidden></div><div class="row" id="hrow"><button class="btn ghost sm" id="hintBtn">Подсказка</button></div><div class="fb" id="fb" aria-live="polite"></div></section>
+   <p class="mini">Задания можно решать в любом порядке: нажми на номер вверху. Ошиблась — попробуй ещё раз.</p></div>`,'game');
+  bindTop();inGame=true;const sn=curSess=sess();const clock=mkClock($('#clock'));clock.init();cleanup=()=>clock.stop();
+  const cnt=r=>Q.filter(t=>t.res===r).length,sum=k=>Q.reduce((a,t)=>a+t[k],0);
+  const nextOpen=()=>{for(let d=1;d<=total;d++){const k=(cur+d)%total;if(!Q[k].res)return k;}return -1;};
+  const RES={ok:'решено',fix:'решено с помощью',bad:'не решено'};
+  function nav(){$('#prog').innerHTML=Q.map((t,k)=>`<button class="qn ${t.res||''}${k===cur?' cur':''}" data-k="${k}" aria-label="Задание ${k+1}${t.res?', '+RES[t.res]:''}" ${k===cur?'aria-current="true"':''}>${k+1}</button>`).join('');
+    $('#prog').querySelectorAll('.qn').forEach(b=>b.onclick=()=>{cur=+b.dataset.k;show();});if(cfg.header)$('#hdr').innerHTML=cfg.header({ok:cnt('ok')+cnt('fix'),total});}
+  function jr(){const a=Q.filter(t=>t.res).length,fin=a===total,st=starsFor(cnt('ok')+cnt('fix')*.5,total);
+    jrec(sn,{item:id,section:stn.name,done:fin,ok:fin&&st>=1,miss:sum('miss'),hints:sum('hints'),result:`с первой попытки: ${cnt('ok')}, с исправлением или подсказкой: ${cnt('fix')}, не решено: ${cnt('bad')} (заданий: ${total})`+(fin?`, звёзд: ${st}`:''),detail:errs.join('; ')||'без ошибок'});}
+  function finish(){const solved=cnt('ok')+cnt('fix'),st=starsFor(cnt('ok')+cnt('fix')*.5,total);finishStation(id,solved,total,st);
+    endScreen(id,solved,total,st,cnt('fix')?`<p class="mini">С первой попытки: ${cnt('ok')}. С исправлением или подсказкой: ${cnt('fix')}.</p>`:'');}
+  function footer(F){const n=nextOpen();F.insertAdjacentHTML('beforeend',`<button class="btn primary" id="nextBtn">${n<0?'Узнать результат':'Дальше →'}</button>`);
+    const go=()=>{if(n<0)finish();else{cur=n;show();}};$('#nextBtn').onclick=go;
+    setTimeout(()=>{if(!paused&&scr==='game'&&document.getElementById('nextBtn'))window.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go();}};},50);}
+  function show(){
+    const t=Q[cur],q=t.q,P=$('#prompt'),A=$('#ans'),F=$('#fb'),HB=$('#hbox'),HR=$('#hrow');clock.hold();window.onkeydown=null;
+    P.innerHTML=q.prompt;A.innerHTML='';delete A.dataset.dead;F.innerHTML='';F.className='fb';HB.hidden=true;HB.innerHTML='';nav();
+    const plain=q.plain||strip(q.prompt);
+    if(t.res){HR.hidden=true;F.className='fb '+(t.res==='bad'?'oops':'good');F.innerHTML=t.fb;footer(F);return;}
+    HR.hidden=false;
+    const h1=q.h1||H1[id]||'',h2=q.h2||(q.fact&&q.fact[1]>1&&q.fact[1]<=6?`${q.fact[0]} · ${q.fact[1]} — это ${rep(q.fact[0],q.fact[1])}.`:'');
+    const hs=[h1,h2].filter(Boolean);
+    const hintPaint=()=>{const b=$('#hintBtn');b.textContent=t.hints===0?'Подсказка':t.hints<hs.length?'Ещё подсказка':'Показать решение';if(t.hints>0){HB.hidden=false;HB.innerHTML=hs.slice(0,t.hints).map((x,k)=>`<p><b>Подсказка ${k+1}.</b> ${x}</p>`).join('');}};
+    $('#hintBtn').onclick=()=>{if(fin)return;if(t.hints>=hs.length){giveUp('показано решение');return;}t.hints++;jr();hintPaint();};
+    hintPaint();
+    let fin=false;
+    const close=(res,title,x)=>{fin=true;clock.hold();window.onkeydown=null;A.dataset.dead='1';A.querySelectorAll('button,input').forEach(b=>{b.disabled=true;});t.res=res;HR.hidden=true;bump(res==='ok');
+      t.fb=`<div class="fb-t">${title}</div>${x?`<div class="fb-x">${x}</div>`:''}`;F.className='fb '+(res==='bad'?'oops':'good');F.innerHTML=t.fb;jr();save();nav();footer(F);$('#nextBtn').scrollIntoView({block:'nearest',behavior:'smooth'});};
+    const giveUp=why=>{if(fin)return;if(t.miss===0&&q.fact)rec(q.fact[0],q.fact[1],false);
+      if(q.kind==='choice')A.querySelectorAll('.opt').forEach(x=>{if(q.options[+x.dataset.k]===q.answer)x.classList.add('right');});
+      let x=q.tx||q.explain||'';if(q.kind==='input')x=`Правильный ответ: <b>${q.answer}</b>. `+x;
+      errs.push(`№${cur+1} ${plain.slice(0,70)}: ${why}`);sfx.bad();close('bad',why==='время вышло'?'Время вышло. Вот решение:':'Вот решение. Разберись в нём и иди дальше.',x);};
+    const miss=given=>{if(fin)return;t.miss++;if(t.miss===1&&q.fact)rec(q.fact[0],q.fact[1],false);
+      const r=q.answer!=null?strip(String(q.answer)):'—';logMistake(stn.name,plain,given,r);errs.push(`№${cur+1} ${plain.slice(0,70)}: ответ «${given}»`);jr();save();sfx.bad();
+      F.className='fb oops';F.innerHTML=`<div class="fb-t">Не совсем. Попробуй ещё раз!</div>`;};
+    const done=(good,given,explain)=>{if(fin)return;if(!good){miss(given);return;}if(t.miss===0&&q.fact)rec(q.fact[0],q.fact[1],true);sfx.ok();const help=t.miss||t.hints;
+      close(help?'fix':'ok',t.miss?'Получилось! Ошибка исправлена.':t.hints?'Получилось! Подсказка помогла.':pick(PRAISE),explain||q.explain||'');};
+    if(q.kind==='choice'){
+      A.innerHTML=`<div class="opts ${q.cls||''}">${q.options.map((o,k)=>`<button class="opt" data-k="${k}">${o}</button>`).join('')}</div>`;
+      A.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(fin)return;const o=q.options[+b.dataset.k];if(o===q.answer){b.classList.add('right');done(true,strip(o));}else{b.classList.add('wrong');b.disabled=true;miss(strip(o));}});
+    }else if(q.kind==='input'){keypad(A,v=>{if(v===q.answer){done(true,v);return true;}miss(v);return false;},q.max||3);}
+    else if(q.kind==='custom'){q.mount(A,done,miss);}
+    clock.q(S.set.secs*(stn.tmul||1),()=>giveUp('время вышло'));
+  }
+  show();
+}
+
+/* ---------- 1. bags ---------- */
+const ITEMS=['🌹','🍄','🦇','💎','🌙','🍎','⭐','🫐'];
+let bagOrder=[];
+function fillOpts(right,cands,n=4){const out=[right];for(const c of cands){if(!out.includes(c))out.push(c);if(out.length>=n)break;}return shuffle(out);}
+function genBags(i){
+  if(i===0)bagOrder=shuffle(['pic','sum2prod','prod2sum','canMul','parts','compute','times','pic']);
+  const k=bagOrder[i%bagOrder.length];
+  if(k==='pic'){let a=rnd(2,5),b=rnd(2,5);if(a===b)b=a===5?4:a+1;const it=pick(ITEMS);
+    const bags=Array.from({length:b},()=>`<div class="bag">${Array(a).fill(`<span>${it}</span>`).join('')}</div>`).join('');
+    const right=`${a} · ${b}`;
+    return{kind:'choice',prompt:`<p>В каждом мешочке по <b>${a}</b>. Мешочков <b>${b}</b>. Как записать умножением, сколько всего?</p><div class="bags" role="img" aria-label="${b} мешочков по ${a}">${bags}</div>`,options:fillOpts(right,[`${a} + ${b}`,`${a} · ${b+1}`,`${a+1} · ${b}`,`${a+b} · ${b}`]),answer:right,plain:`${b} мешочков по ${a}: записать умножением`,explain:`По ${a} взяли ${b} раз: ${rep(a,b)} = ${a*b}. Записываем: <b>${a} · ${b} = ${a*b}</b>.`};}
+  if(k==='sum2prod'){const a=rnd(2,9);let b=rnd(3,5);if(a===b)b++;const right=`${a} · ${b}`;
+    return{kind:'choice',prompt:`<p>Замени сумму произведением:</p><div class="big">${rep(a,b)}</div>`,options:fillOpts(right,[`${a} + ${b}`,`${a} · ${b-1}`,`${b} · ${b}`,`${a} · ${b+1}`]),answer:right,explain:`Слагаемое ${a} повторяется ${b} раз, значит это ${a} · ${b} = ${a*b}.`};}
+  if(k==='prod2sum'){const a=rnd(2,9),b=rnd(2,4);const right=rep(a,b);
+    return{kind:'choice',cls:'wide',prompt:`<p>Какой сумме равно произведение?</p><div class="big">${a} · ${b}</div>`,options:fillOpts(right,[`${a} + ${b}`,rep(a,b+1),b>2?rep(a,b-1):rep(a+1,b)]),answer:right,explain:`${a} · ${b} — это по ${a} взять ${b} раз: ${right} = ${a*b}.`};}
+  if(k==='canMul'){const a=rnd(2,9),n=rnd(3,5);const yes=Math.random()<.5;const arr=Array(n).fill(a);if(!yes){arr[rnd(0,n-1)]=a+(Math.random()<.5&&a>2?-1:1);}const s=arr.join(' + ');
+    return{kind:'choice',prompt:`<p>Можно ли заменить эту сумму умножением?</p><div class="big">${s}</div>`,options:['Да, можно','Нет, нельзя'],answer:yes?'Да, можно':'Нет, нельзя',explain:yes?`Все слагаемые одинаковые: ${s} = ${a} · ${n}.`:'Слагаемые не все одинаковые — такую сумму умножением не заменить.'};}
+  if(k==='parts'){const f=pickFact();const a=f.t,b=Math.max(2,f.m),c=a*b;const which=pick(['a','b','c']);
+    const eq=[which==='a'?`<span class="hl">${a}</span>`:a,' · ',which==='b'?`<span class="hl">${b}</span>`:b,' = ',which==='c'?`<span class="hl">${c}</span>`:c].join('');
+    const right=which==='c'?'произведение':'множитель';
+    return{kind:'choice',prompt:`<p>Как называется выделенное число?</p><div class="big">${eq}</div>`,options:shuffle(['множитель','произведение','слагаемое','сумма']),answer:right,explain:`Числа, которые умножают, — <b>множители</b>. Результат умножения — <b>произведение</b>: ${a} · ${b} = ${c}.`};}
+  if(k==='compute'){const t=pick(S.set.tables),b=rnd(2,5);
+    return{kind:'input',fact:[t,b],prompt:`<p>Замени умножение сложением и вычисли:</p><div class="big">${t} · ${b} = ?</div>`,answer:t*b,explain:`${t} · ${b} = ${rep(t,b)} = ${t*b}.`};}
+  const a=rnd(2,9),b=rnd(2,6);
+  return{kind:'input',prompt:`<p>Сколько раз взяли по ${a}?</p><div class="big">${rep(a,b)}</div>`,answer:b,explain:`Число ${a} повторяется ${b} раз, значит это ${a} · ${b} = ${a*b}.`};
+}
+
+/* ---------- 2. mirror ---------- */
+let mirOrder=[];
+function genMirror(i){
+  if(i===0)mirOrder=shuffle(['swap','swap','compare','compare','zero','zero','skip','skip','rev','find']);
+  const k=mirOrder[i%mirOrder.length];
+  if(k==='swap'){let f=pickFact();let g=0;while(f.t===f.m&&g++<5)f=pickFact();const{t,m}=f;
+    const v=Math.random()<.5;
+    return{kind:'input',prompt:`<p>Какое число спряталось?</p><div class="big">${v?`${t} · ${m} = ${m} · ?`:`${t} · ${m} = ? · ${t}`}</div>`,answer:v?t:m,explain:`От перестановки множителей произведение не меняется: ${t} · ${m} = ${m} · ${t} = ${t*m}.`};}
+  if(k==='compare'){
+    const ty=rnd(1,5);let L,R,lv,rv;
+    const a=pick(S.set.tables),b=rnd(2,9);
+    if(ty===1){L=`${a} · ${b}`;R=`${b} · ${a}`;lv=rv=a*b;}
+    else if(ty===2){const up=Math.random()<.5;L=`${a} · ${b}`;R=`${a} · ${up?b+1:b-1}`;lv=a*b;rv=a*(up?b+1:b-1);if(Math.random()<.5){[L,R]=[R,L];[lv,rv]=[rv,lv];}}
+    else if(ty===3){const n=rnd(2,50);const z=Math.random()<.5;L=z?`${n} · 0`:`${n} · 1`;R=z?`1 · ${n}`:`0 · ${n}`;lv=z?0:n;rv=z?n:0;}
+    else if(ty===4){const c=rnd(3,4);const cc=Math.random()<.5?c:c+1;L=rep(a,c);R=`${a} · ${cc}`;lv=a*c;rv=a*cc;}
+    else{const x=rnd(3,9),y=rnd(3,9);L=`${x} · ${y}`;R=`${x} + ${y}`;lv=x*y;rv=x+y;}
+    const sign=lv<rv?'<':lv>rv?'>':'=';
+    return{kind:'choice',cls:'three',prompt:`<p>Сравни. Какой знак поставить вместо ○?</p><div class="big">${L} ○ ${R}</div>`,options:['<','=','>'],answer:sign,explain:`${L} = ${lv}, ${R} = ${rv}, значит ${L} <b>${sign}</b> ${R}.`};}
+  if(k==='zero'){const n=rnd(2,99),f=rnd(1,4);const e=[`${n} · 1`,`1 · ${n}`,`${n} · 0`,`0 · ${n}`][f-1];const ans=f<=2?n:0;
+    return{kind:'input',prompt:`<p>Вычисли:</p><div class="big">${e} = ?</div>`,answer:ans,explain:f<=2?'Если умножить число на 1, получится то же самое число.':'Если один из множителей 0, произведение равно 0.'};}
+  if(k==='rev'){let f=pickFact();let g=0;while(f.m<2&&g++<6)f=pickFact();const{t,m,ans}=f;const v=Math.random()<.5;
+    return{kind:'input',fact:[t,m],plain:v?`? · ${m} = ${ans}`:`${t} · ? = ${ans}`,h2:`Посчитай шагами по ${v?m:t}, пока не получится ${ans}.`,prompt:`<p>Какой множитель спрятался?</p><div class="big">${v?`? · ${m} = ${ans}`:`${t} · ? = ${ans}`}</div>`,answer:v?t:m,explain:`${t} · ${m} = ${ans}. Проверяем: ${rep(v?m:t,v?t:m)} = ${ans}.`};}
+  if(k==='find'){const f=pickFact();const right=`${f.x} · ${f.y}`;const c=[];let g=0;while(c.length<3&&g++<80){const a=rnd(2,9),b=rnd(2,9),e=`${a} · ${b}`;if(a*b!==f.ans&&Math.abs(a*b-f.ans)<=12&&!c.includes(e))c.push(e);}
+    return{kind:'choice',fact:[f.t,f.m],prompt:`<p>Какое произведение равно этому числу?</p><div class="big">${f.ans}</div>`,options:fillOpts(right,c),answer:right,explain:`${right} = ${f.ans}.`};}
+  const t=pick(S.set.tables),k0=rnd(1,4),h=rnd(1,4);const seq=[0,1,2,3,4].map(j=>t*(k0+j));
+  return{kind:'input',fact:[t,k0+h],prompt:`<p>Ворон прыгает по ступенькам через ${t}. Какое число пропущено?</p><div class="big">${seq.map((v,j)=>j===h?'<span class="hl">?</span>':v).join(', ')}</div>`,answer:seq[h],explain:`Каждый прыжок — плюс ${t}: ${seq[h-1]} + ${t} = ${seq[h]}. Это ${t} · ${k0+h}.`};
+}
+
+/* ---------- 3. maze ---------- */
+function makeMaze(cw,ch){
+  const C=cw*2+1,R=ch*2+1;const g=Array.from({length:R},()=>Array(C).fill(1));
+  const vis=Array.from({length:ch},()=>Array(cw).fill(false));const st=[[0,0]];vis[0][0]=true;g[1][1]=0;
+  while(st.length){const[x,y]=st[st.length-1];const nb=shuffle([[1,0],[-1,0],[0,1],[0,-1]]).map(([dx,dy])=>[x+dx,y+dy,dx,dy]).filter(([nx,ny])=>nx>=0&&ny>=0&&nx<cw&&ny<ch&&!vis[ny][nx]);
+    if(!nb.length){st.pop();continue;}const[nx,ny,dx,dy]=nb[0];vis[ny][nx]=true;g[y*2+1+dy][x*2+1+dx]=0;g[ny*2+1][nx*2+1]=0;st.push([nx,ny]);}
+  // knock extra walls for loops
+  const walls=[];for(let r=1;r<R-1;r++)for(let c=1;c<C-1;c++){if(g[r][c]===1&&((r%2===1&&c%2===0&&g[r][c-1]===0&&g[r][c+1]===0)||(r%2===0&&c%2===1&&g[r-1][c]===0&&g[r+1][c]===0)))walls.push([r,c]);}
+  shuffle(walls).slice(0,14).forEach(([r,c])=>g[r][c]=0);
+  return g;
+}
+function startMaze(){
+  const stn=ST.maze,L=S.set.level,TOTAL=10;
+  setScreen(`<div class="wrap play">${topbar(stn,true)}
+   <div class="hud"><div class="lives" id="lives" aria-label="Жизни"></div><div class="qbig" id="mq" aria-live="polite">Готова?</div><div class="score" id="msc">0 / ${TOTAL}</div></div>
+   <div class="stage" id="stage"><canvas id="cv" aria-label="Лабиринт"></canvas>
+    <div class="overlay" id="ov"><h3>Лабиринт дракончика</h3><p>Веди дракончика к шару с <b>правильным ответом</b>. Колючки играют в догонялки — не попадайся!</p><p class="mini">Управление: стрелки на клавиатуре, свайп по полю или кнопки под лабиринтом.</p><button class="btn primary" id="go">Старт</button></div></div>
+   <div class="dpad"><button class="u" data-d="up" aria-label="Вверх">▲</button><button class="l" data-d="left" aria-label="Влево">◀</button><button class="d" data-d="down" aria-label="Вниз">▼</button><button class="r" data-d="right" aria-label="Вправо">▶</button></div>
+  </div>`,'game');
+  bindTop();inGame=true;const sn=curSess=sess();const errs=[];
+  const jr=fin=>jrec(sn,{item:'maze',section:stn.name,done:fin,ok:fin&&starsFor(okc,TOTAL)>=1,result:`верно ${okc} из ${qn}`+(fin?`, звёзд: ${starsFor(okc,TOTAL)}`:` (всего заданий: ${TOTAL})`),miss:errs.length,detail:errs.join('; ')||'без ошибок'});
+  const COLS=15,ROWS=11,grid=makeMaze(7,5);
+  const cv=$('#cv'),ctx=cv.getContext('2d');let ts=32;
+  const col={floor:cssv('--floor'),wall:cssv('--wall'),thorn:cssv('--thorn'),jade:cssv('--jade'),gold:cssv('--gold'),rose:cssv('--rose'),ink:cssv('--ink'),night:cssv('--night'),skin:cssv('--skin'),horn:cssv('--horn'),bark2:cssv('--bark2')};
+  function resize(){const w=Math.min($('#stage').clientWidth-16,720);ts=Math.max(16,Math.floor(w/COLS));const dpr=window.devicePixelRatio||1;cv.width=COLS*ts*dpr;cv.height=ROWS*ts*dpr;cv.style.width=COLS*ts+'px';cv.style.height=ROWS*ts+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
+  resize();window.addEventListener('resize',resize);
+  const open=(c,r)=>r>=0&&r<ROWS&&c>=0&&c<COLS&&grid[r][c]===0;
+  const DIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]},OPP={up:'down',down:'up',left:'right',right:'left'};
+  const START=[7,5];
+  const P={x:7,y:5,tx:7,ty:5,dir:null,want:null,spd:5.2};
+  const enemyN=L>=3?3:2,espd=[0,1.7,2.3,2.9][L],rndChance=[0,.4,.25,.15][L];
+  const corners=[[1,1],[COLS-2,1],[1,ROWS-2],[COLS-2,ROWS-2]];
+  let enemies=[],lives=livesMax(),qn=0,okc=0,fact=null,orbs=[],state='ready',inv=0,flash=0,flashCol=col.jade,tm=0,dist=null,distKey='',qWrong=false,alive=true;
+  function resetEnemies(){const far=corners.filter(([c,r])=>Math.abs(c-P.tx)+Math.abs(r-P.ty)>6);enemies=shuffle(far.length>=enemyN?far:corners).slice(0,enemyN).map(([c,r])=>({x:c,y:r,tx:c,ty:r,dir:null,spd:espd}));}
+  function bfs(c0,r0){const d=Array.from({length:ROWS},()=>Array(COLS).fill(1e9));const q=[[c0,r0]];d[r0][c0]=0;let h=0;while(h<q.length){const[c,r]=q[h++];for(const k in DIRS){const nc=c+DIRS[k][0],nr=r+DIRS[k][1];if(open(nc,nr)&&d[nr][nc]>d[r][c]+1){d[nr][nc]=d[r][c]+1;q.push([nc,nr]);}}}return d;}
+  function hearts(){$('#lives').textContent=heartStr(lives);$('#msc').textContent=`${okc} / ${TOTAL}`;}
+  function newQ(){
+    let f,g=0;do{f=pickFact();}while(fact&&f.ans===fact.ans&&g++<6);fact=f;qWrong=false;
+    $('#mq').textContent=`${f.x} · ${f.y} = ?`;$('#mq').classList.remove('toast');
+    const vals=[f.ans,...distract(f,3)];const d=bfs(Math.round(P.tx),Math.round(P.ty));
+    const cand=[];for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(open(c,r)&&d[r][c]>=4&&d[r][c]<1e9)cand.push([c,r]);
+    const sc=shuffle(cand);
+    for(const sp of [4,3,2,1]){orbs=[];for(const[c,r] of sc){if(orbs.every(o=>Math.abs(o.c-c)+Math.abs(o.r-r)>=sp)){orbs.push({c,r,val:vals[orbs.length],ok:orbs.length===0,alive:true});if(orbs.length===vals.length)break;}}if(orbs.length===vals.length)break;}
+  }
+  function step(e,dt,choose){let left=e.spd*dt,g=0;while(left>1e-6&&g++<4){if(e.x===e.tx&&e.y===e.ty){const d=choose(e);if(!d){e.dir=null;return;}e.dir=d;e.tx=e.x+DIRS[d][0];e.ty=e.y+DIRS[d][1];}const dx=e.tx-e.x,dy=e.ty-e.y,dd=Math.abs(dx)+Math.abs(dy);if(dd<=left){e.x=e.tx;e.y=e.ty;left-=dd;}else{e.x+=Math.sign(dx)*left;e.y+=Math.sign(dy)*left;left=0;}}}
+  const choosePlayer=e=>{if(e.want&&open(e.x+DIRS[e.want][0],e.y+DIRS[e.want][1]))return e.want;if(e.dir&&open(e.x+DIRS[e.dir][0],e.y+DIRS[e.dir][1]))return e.dir;return null;};
+  const chooseEnemy=e=>{const opts=Object.keys(DIRS).filter(k=>open(e.x+DIRS[k][0],e.y+DIRS[k][1]));let o2=opts.filter(k=>k!==OPP[e.dir]);if(!o2.length)o2=opts;if(!o2.length)return null;if(Math.random()<rndChance||!dist)return pick(o2);let best=o2[0],bv=1e9;for(const k of o2){const v=dist[e.y+DIRS[k][1]][e.x+DIRS[k][0]];if(v<bv){bv=v;best=k;}}return best;};
+  function end(){state='over';jr(true);const stars=finishStation('maze',okc,TOTAL);setTimeout(()=>{if(alive)endScreen('maze',okc,TOTAL,stars,lives===0?'<p class="mini">Колючки догнали дракончика. В следующий раз беги от них подальше!</p>':'');},700);}
+  function update(dt){
+    tm+=dt;if(inv>0)inv-=dt;if(flash>0)flash-=dt;
+    step(P,dt,choosePlayer);
+    const pc=Math.round(P.x),pr=Math.round(P.y),k=pc+','+pr;if(k!==distKey){distKey=k;dist=bfs(pc,pr);}
+    enemies.forEach(e=>step(e,dt,chooseEnemy));
+    if(Math.abs(P.x-pc)+Math.abs(P.y-pr)<.35){
+      const o=orbs.find(o=>o.alive&&o.c===pc&&o.r===pr);
+      if(o){
+        if(o.ok){rec(fact.t,fact.m,!qWrong);if(!qWrong)okc++;qn++;lives=lifeBonus(bump(!qWrong),lives);sfx.ok();flash=.35;flashCol=col.jade;hearts();save();
+          if(qn>=TOTAL)return end();jr(false);newQ();resetEnemies();}
+        else{o.alive=false;qWrong=true;bump(false);if(isFinite(lives))lives--;errs.push(`${fact.x} · ${fact.y}: ответ «${o.val}», верно «${fact.ans}»`);rec(fact.t,fact.m,false);logMistake(stn.name,`${fact.x} · ${fact.y}`,o.val,fact.ans);save();sfx.bad();flash=.35;flashCol=col.rose;hearts();
+          $('#mq').innerHTML=`${fact.x} · ${fact.y} ≠ ${o.val}`;$('#mq').classList.add('toast');const f0=fact;setTimeout(()=>{if(alive&&fact===f0){$('#mq').textContent=`${f0.x} · ${f0.y} = ?`;$('#mq').classList.remove('toast');}},1200);
+          if(lives<=0)return end();}
+      }
+    }
+    if(inv<=0)for(const e of enemies){if(Math.hypot(e.x-P.x,e.y-P.y)<.65){if(isFinite(lives))lives--;errs.push('поймала колючка');jr(false);sfx.bad();flash=.4;flashCol=col.rose;hearts();if(lives<=0)return end();P.x=P.tx=START[0];P.y=P.ty=START[1];P.dir=null;P.want=null;inv=1.6;resetEnemies();break;}}
+  }
+  function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+  function drawFairy(cx,cy,s){
+    const g=ctx.createRadialGradient(cx,cy,1,cx,cy,s*.7);g.addColorStop(0,'rgba(197,140,245,.45)');g.addColorStop(1,'rgba(98,227,166,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,s*.7,0,7);ctx.fill();
+    ctx.fillStyle='#5a2f7a';ctx.strokeStyle=col.jade;ctx.lineWidth=1.2;
+    for(const sg of[-1,1]){ctx.beginPath();ctx.moveTo(cx+sg*s*.12,cy-s*.18);ctx.quadraticCurveTo(cx+sg*s*.42,cy-s*.3,cx+sg*s*.3,cy-s*.5);ctx.quadraticCurveTo(cx+sg*s*.26,cy-s*.28,cx+sg*s*.02,cy-s*.2);ctx.closePath();ctx.fill();ctx.stroke();}
+    ctx.beginPath();ctx.arc(cx,cy,s*.3,Math.PI,0);ctx.lineTo(cx+s*.32,cy+s*.34);ctx.lineTo(cx-s*.32,cy+s*.34);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.fillStyle=col.skin;ctx.beginPath();ctx.ellipse(cx,cy+s*.04,s*.17,s*.21,0,0,7);ctx.fill();
+    ctx.fillStyle=col.jade;ctx.beginPath();ctx.arc(cx-s*.07,cy,s*.035,0,7);ctx.arc(cx+s*.07,cy,s*.035,0,7);ctx.fill();
+    ctx.strokeStyle=col.rose;ctx.lineWidth=Math.max(1,s*.04);ctx.beginPath();ctx.arc(cx,cy+s*.08,s*.05,.2*Math.PI,.8*Math.PI);ctx.stroke();
+  }
+  function drawThorn(cx,cy,s,t){
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(t*2);ctx.beginPath();const n=9;for(let k=0;k<n*2;k++){const a=k*Math.PI/n,rad=k%2?s*.22:s*.42;ctx.lineTo(Math.cos(a)*rad,Math.sin(a)*rad);}ctx.closePath();ctx.fillStyle='#ff9a4d';ctx.fill();ctx.strokeStyle=col.rose;ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+    const dx=Math.sign(P.x*ts-cx)*s*.03,dy=Math.sign(P.y*ts-cy)*s*.03;
+    ctx.fillStyle=col.ink;ctx.beginPath();ctx.arc(cx-s*.08,cy-s*.03,s*.07,0,7);ctx.arc(cx+s*.08,cy-s*.03,s*.07,0,7);ctx.fill();
+    ctx.fillStyle=col.night;ctx.beginPath();ctx.arc(cx-s*.08+dx,cy-s*.03+dy,s*.035,0,7);ctx.arc(cx+s*.08+dx,cy-s*.03+dy,s*.035,0,7);ctx.fill();
+  }
+  function draw(){
+    const W=COLS*ts,H=ROWS*ts;ctx.fillStyle=col.floor;ctx.fillRect(0,0,W,H);
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(grid[r][c]){ctx.fillStyle=col.wall;rr(c*ts+1,r*ts+1,ts-2,ts-2,ts*.28);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,.55)';ctx.beginPath();ctx.moveTo(c*ts+ts*.5,r*ts+ts*.18);ctx.lineTo(c*ts+ts*.62,r*ts+ts*.5);ctx.lineTo(c*ts+ts*.38,r*ts+ts*.5);ctx.fill();}
+    for(const o of orbs){if(!o.alive)continue;const cx=o.c*ts+ts/2,cy=o.r*ts+ts/2,pulse=1+Math.sin(tm*4+o.c)*.05;
+      const g=ctx.createRadialGradient(cx,cy,2,cx,cy,ts*.6);g.addColorStop(0,'rgba(243,201,108,.35)');g.addColorStop(1,'rgba(243,201,108,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,ts*.6,0,7);ctx.fill();
+      ctx.fillStyle='#ffffff';ctx.strokeStyle=col.gold;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(cx,cy,ts*.44*pulse,0,7);ctx.fill();ctx.stroke();
+      ctx.fillStyle=col.ink;ctx.font=`900 ${Math.round(ts*(String(o.val).length>2?.36:.46))}px Nunito, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(o.val,cx,cy+1);}
+    enemies.forEach(e=>drawThorn(e.x*ts+ts/2,e.y*ts+ts/2,ts,tm));
+    if(!(inv>0&&Math.floor(tm*10)%2))drawMascot(ctx,P.x*ts+ts/2,P.y*ts+ts/2,ts*1.15);
+    if(flash>0){ctx.globalAlpha=Math.min(.35,flash);ctx.fillStyle=flashCol;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
+  }
+  let last=performance.now(),raf=0;
+  function loop(now){if(!alive)return;const dt=Math.min(.05,(now-last)/1000);last=now;if(state==='run'&&!paused)update(dt);else tm+=dt;if(!alive)return;draw();raf=requestAnimationFrame(loop);}
+  raf=requestAnimationFrame(loop);
+  cleanup=()=>{alive=false;cancelAnimationFrame(raf);window.removeEventListener('resize',resize);};
+  function begin(){if(state!=='ready')return;$('#ov').hidden=true;state='run';hearts();newQ();resetEnemies();}
+  function setWant(d){if(state==='ready'){begin();}P.want=d;if(P.dir&&d===OPP[P.dir]&&(P.x!==P.tx||P.y!==P.ty)){P.tx-=DIRS[P.dir][0];P.ty-=DIRS[P.dir][1];P.dir=d;}}
+  $('#go').onclick=begin;hearts();
+  window.onkeydown=e=>{const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right','ц':'up','ы':'down','ф':'left','в':'right'}[e.key];if(m){e.preventDefault();setWant(m);}else if(e.key==='Enter'&&state==='ready'){e.preventDefault();begin();}};
+  app.querySelectorAll('.dpad button').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();setWant(b.dataset.d);}));
+  let sw=null;cv.addEventListener('pointerdown',e=>{sw=[e.clientX,e.clientY];});
+  cv.addEventListener('pointerup',e=>{if(!sw)return;const dx=e.clientX-sw[0],dy=e.clientY-sw[1];sw=null;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;setWant(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));});
+}
+
+/* ---------- 4. catch ---------- */
+function startCatch(){
+  const stn=ST.catch,L=S.set.level,TOTAL=10;
+  setScreen(`<div class="wrap play">${topbar(stn,true)}
+   <div class="hud"><div class="lives" id="lives" aria-label="Жизни"></div><div class="qbig" id="cq" aria-live="polite">Готова?</div><div class="score" id="csc">0 / ${TOTAL}</div></div>
+   <div class="stage" id="stage"><canvas id="cv" aria-label="Небо с облаками-ответами"></canvas>
+    <div class="overlay" id="ov"><h3>Перехват в облаках</h3><p>Навстречу летят облака с числами. Веди дракончика вверх и вниз и <b>поймай облако с верным ответом</b>. Неверное облако отнимает жизнь. Если нужное облако улетело — оно прилетит снова.</p><p class="mini">Управление: палец или мышка по полю, стрелки ↑ ↓ на клавиатуре или кнопки под полем.</p><button class="btn primary" id="go">Старт</button></div></div>
+   <div class="row" style="justify-content:center"><button class="btn padb" id="up" aria-label="Вверх">▲</button><button class="btn padb" id="dn" aria-label="Вниз">▼</button></div>
+  </div>`,'game');
+  bindTop();inGame=true;const sn=curSess=sess();
+  const cv=$('#cv'),ctx=cv.getContext('2d');let W=600,H=320;
+  const col={jade:cssv('--jade'),gold:cssv('--gold'),rose:cssv('--rose'),ink:cssv('--ink'),night:cssv('--night'),floor:cssv('--floor'),bark2:cssv('--bark2')};
+  function resize(){const oh=H;W=Math.max(240,Math.min($('#stage').clientWidth-16,760));H=Math.round(Math.max(280,Math.min(380,W*.62)));const dpr=window.devicePixelRatio||1;cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);D.y=D.y/oh*H;D.ty=D.ty/oh*H;}
+  const D={y:160,ty:160},keys={up:false,down:false},DX=62;
+  resize();window.addEventListener('resize',resize);
+  let state='ready',lives=livesMax(),qn=0,okc=0,fact=null,clouds=[],qWrong=false,wait=0,tm=0,alive=true,flash=0,flashCol=col.jade;const errs=[];
+  const stars=Array.from({length:36},()=>[Math.random(),Math.random(),Math.random()*1.4+.4]);
+  const hud=()=>{$('#lives').textContent=heartStr(lives);$('#csc').textContent=`${okc} / ${TOTAL}`;};
+  const journalRow=fin=>jrec(sn,{miss:errs.length,item:'catch',section:stn.name,done:fin,ok:fin&&starsFor(okc,TOTAL)>=1,result:`верно ${okc} из ${qn}`+(fin?`, звёзд: ${starsFor(okc,TOTAL)}`:` (всего заданий: ${TOTAL})`),detail:errs.join('; ')||'без ошибок'});
+  function wave(){const n=L===1?3:4;const vals=[fact.ans,...distract(fact,n-1)];const lanes=shuffle(vals.map((_,k)=>k));const order=shuffle(vals.map((_,k)=>k));const r=Math.min(40,(H-30)/(n*2.3));
+    clouds=vals.map((v,k)=>({v,ok:k===0,x:W+60+order[k]*W*.3,y:24+r+lanes[k]*((H-48-2*r)/(n-1)),r,dead:false}));}
+  function newQ(){let f,g=0;do{f=pickFact();}while(fact&&f.ans===fact.ans&&g++<6);fact=f;qWrong=false;$('#cq').textContent=`${f.x} · ${f.y} = ?`;$('#cq').classList.remove('toast');wave();}
+  function end(){state='over';journalRow(true);const st=finishStation('catch',okc,TOTAL);setTimeout(()=>{if(alive)endScreen('catch',okc,TOTAL,st,lives<=0?'<p class="mini">Жизни закончились. Не спеши: сначала реши пример, потом лети к облаку.</p>':'');},700);}
+  function update(dt){
+    tm+=dt;if(flash>0)flash-=dt;
+    if(keys.up)D.ty-=300*dt;if(keys.down)D.ty+=300*dt;D.ty=Math.max(26,Math.min(H-26,D.ty));
+    const dy=D.ty-D.y,mv=460*dt;D.y+=Math.abs(dy)<mv?dy:Math.sign(dy)*mv;
+    if(wait>0){wait-=dt;if(wait<=0)newQ();return;}
+    const sp=W*[0,.12,.17,.23][L];
+    for(const c of clouds){c.x-=sp*dt;
+      if(!c.dead&&Math.hypot(c.x-DX,c.y-D.y)<c.r+16){c.dead=true;
+        if(c.ok){rec(fact.t,fact.m,!qWrong);if(!qWrong)okc++;qn++;lives=lifeBonus(bump(!qWrong),lives);sfx.ok();flash=.3;flashCol=col.jade;hud();save();journalRow(false);clouds=[];if(qn>=TOTAL)return end();wait=.5;return;}
+        qWrong=true;bump(false);if(isFinite(lives))lives--;rec(fact.t,fact.m,false);logMistake(stn.name,`${fact.x} · ${fact.y}`,c.v,fact.ans);errs.push(`${fact.x} · ${fact.y}: ответ «${c.v}», верно «${fact.ans}»`);save();sfx.bad();flash=.3;flashCol=col.rose;hud();
+        $('#cq').textContent=`${fact.x} · ${fact.y} ≠ ${c.v}`;$('#cq').classList.add('toast');const f0=fact;setTimeout(()=>{if(alive&&fact===f0&&state==='run'){$('#cq').textContent=`${f0.x} · ${f0.y} = ?`;$('#cq').classList.remove('toast');}},1200);
+        if(lives<=0){qn++;journalRow(false);return end();}}}
+    clouds=clouds.filter(c=>!c.dead&&c.x>-70);
+    if(!clouds.some(c=>c.ok))wave();
+  }
+  function drawDragon(x,y,s,t){
+    ctx.save();ctx.translate(x,y);const flap=Math.sin(t*12)*.6,c=col.jade;
+    ctx.fillStyle='#8b46d9';ctx.beginPath();ctx.moveTo(-s*.12,-s*.05);ctx.lineTo(-s*.4,-s*(.5+flap*.3));ctx.lineTo(s*.12,-s*.08);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=c;ctx.lineWidth=s*.1;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-s*.3,0);ctx.quadraticCurveTo(-s*.55,s*.14,-s*.72,-s*.04);ctx.stroke();
+    ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(-s*.05,s*.02,s*.3,s*.17,0,0,7);ctx.fill();
+    ctx.restore();drawMascot(ctx,x+s*.3,y-s*.06,s*.62);
+  }
+  function draw(){
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#ffb0d2');g.addColorStop(1,'#ffe3c4');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#ffffff';for(const[sx,sy,sr] of stars){ctx.globalAlpha=.35+.3*Math.abs(Math.sin(tm*1.5+sx*9));ctx.beginPath();ctx.arc(((sx-tm*.012)%1+1)%1*W,sy*H,sr,0,7);ctx.fill();}ctx.globalAlpha=1;
+    for(const c of clouds){const r=c.r;ctx.fillStyle='#ffffff';ctx.shadowColor='rgba(150,60,140,.35)';ctx.shadowBlur=8;ctx.beginPath();ctx.arc(c.x-r*.55,c.y+r*.15,r*.62,0,7);ctx.arc(c.x+r*.55,c.y+r*.15,r*.62,0,7);ctx.arc(c.x-r*.1,c.y-r*.3,r*.72,0,7);ctx.arc(c.x+r*.3,c.y-r*.1,r*.6,0,7);ctx.fill();ctx.fillRect(c.x-r*.6,c.y,r*1.2,r*.77);ctx.shadowBlur=0;
+      ctx.fillStyle='#241634';ctx.font=`900 ${Math.round(r*.82)}px Nunito, system-ui, sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(c.v,c.x,c.y+r*.12);}
+    drawDragon(DX,D.y,58,tm);
+    if(flash>0){ctx.globalAlpha=Math.min(.3,flash);ctx.fillStyle=flashCol;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;}
+  }
+  let last=performance.now(),raf=0;
+  function loop(now){if(!alive)return;const dt=Math.min(.05,(now-last)/1000);last=now;if(state==='run'&&!paused)update(dt);if(!alive)return;draw();raf=requestAnimationFrame(loop);}
+  raf=requestAnimationFrame(loop);
+  cleanup=()=>{alive=false;cancelAnimationFrame(raf);window.removeEventListener('resize',resize);window.onkeyup=null;};
+  function begin(){if(state!=='ready')return;$('#ov').hidden=true;state='run';hud();newQ();}
+  $('#go').onclick=begin;hud();
+  const setY=e=>{const r=cv.getBoundingClientRect();D.ty=(e.clientY-r.top)*(H/r.height);};
+  cv.addEventListener('pointerdown',e=>{setY(e);try{cv.setPointerCapture(e.pointerId);}catch(x){}});
+  cv.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='mouse')setY(e);});
+  const hold=(b,k)=>{b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{keys[k]=false;}));};
+  hold($('#up'),'up');hold($('#dn'),'down');
+  window.onkeydown=e=>{if(e.key==='ArrowUp'){keys.up=true;e.preventDefault();}else if(e.key==='ArrowDown'){keys.down=true;e.preventDefault();}else if(e.key==='Enter'&&state==='ready'){e.preventDefault();begin();}};
+  window.onkeyup=e=>{if(e.key==='ArrowUp')keys.up=false;if(e.key==='ArrowDown')keys.down=false;};
+}
+
+/* ---------- 5. parentheses ---------- */
+function tokenize(s){const out=[];s=s.replace(/\s+/g,'');let i=0;while(i<s.length){const c=s[i];if(/[0-9]/.test(c)){let j=i;while(j<s.length&&/[0-9]/.test(s[j]))j++;out.push({t:'n',v:+s.slice(i,j)});i=j;continue;}if(/[A-Z]/.test(c)){out.push({t:'n',name:c});i++;continue;}if('+-·*−'.includes(c)){out.push({t:'op',op:c==='*'?'·':c==='−'?'-':c});i++;continue;}if(c==='('||c===')'){out.push({t:c});}i++;}out.forEach((tk,k)=>tk.id=k);return out;}
+function parse(tk){let p=0;const pk=()=>tk[p];
+  function expr(){let l=term();while(pk()&&pk().t==='op'&&pk().op!=='·'){const o=tk[p++];const r=term();l={t:'op',op:o.op,id:o.id,l,r};}return l;}
+  function term(){let l=fac();while(pk()&&pk().t==='op'&&pk().op==='·'){const o=tk[p++];const r=fac();l={t:'op',op:'·',id:o.id,l,r};}return l;}
+  function fac(){const t=tk[p++];if(t.t==='('){const e=expr();p++;return e;}return{t:'n',tok:t};}
+  return expr();}
+function ev(n,vals,flag){if(n.t==='n')return n.tok.name?vals[n.tok.name]:n.tok.v;const a=ev(n.l,vals,flag),b=ev(n.r,vals,flag);const r=n.op==='+'?a+b:n.op==='-'?a-b:a*b;if(r<0||r>100)flag.bad=true;if(n.op==='-'&&r===0)flag.bad=true;if(n.op==='·'&&(a<2||b<2))flag.bad=true;return r;}
+function opOrder(n,out=[]){if(n.t==='op'){opOrder(n.l,out);opOrder(n.r,out);out.push(n.id);}return out;}
+function mulSub(n,set=new Set(),under=false){if(n.t==='n'){if(under&&n.tok.name)set.add(n.tok.name);return set;}const u=under||n.op==='·';mulSub(n.l,set,u);mulSub(n.r,set,u);return set;}
+const opSym=o=>o==='-'?'−':o==='·'?'·':'+';
+function stepsOf(n,vals,out=[]){if(n.t==='n')return n.tok.name?vals[n.tok.name]:n.tok.v;const a=stepsOf(n.l,vals,out),b=stepsOf(n.r,vals,out);const r=n.op==='+'?a+b:n.op==='-'?a-b:a*b;out.push(`${a} ${opSym(n.op)} ${b} = ${r}`);return r;}
+function stepsHtml(ast,vals){const s=[];stepsOf(ast,vals,s);return s.map((x,k)=>`<b>${k+1})</b> ${x}`).join('&nbsp;&nbsp; ');}
+function exprText(tk,vals){let s='';for(const t of tk){if(t.t==='n')s+=(t.name?vals[t.name]:t.v);else if(t.t==='op')s+=' '+opSym(t.op)+' ';else s+=t.t;}return s;}
+function exprHtml(tk,vals,click){return tk.map(t=>{if(t.t==='n')return `<span class="ex-n">${t.name?vals[t.name]:t.v}</span>`;if(t.t==='op')return click?`<button class="ex-op" data-id="${t.id}" aria-label="знак ${opSym(t.op)}"><span class="ord"></span>${opSym(t.op)}</button>`:`<span class="ex-o">${opSym(t.op)}</span>`;return `<span class="ex-p">${t.t}</span>`;}).join('');}
+function fillTpl(tpl,tries=500){const tk=tokenize(tpl),ast=parse(tk),mv=mulSub(ast),names=uniq(tk.filter(t=>t.name).map(t=>t.name));
+  for(let k=0;k<tries;k++){const vals={};for(const nm of names)vals[nm]=mv.has(nm)?rnd(2,9):rnd(2,S.set.level>=3?90:60);const fl={};const v=ev(ast,vals,fl);if(!fl.bad)return{tk,ast,vals,value:v};}return null;}
+const TPL2=['A - (B + C)','A - (B - C)','(A + B) - C','A + (B - C)','A - B + C','A - B - C','A + B - C'];
+const TPL3=['A - (B + C) + D','(A - B) - (C + D)','A + B - (C - D)','A - (B - C) + D','(A + B) - (C + D)','A - B + (C - D)'];
+const TPLM=['A + B · C','(A + B) · C','A · B - C','A - B · C','A · (B + C)','A · B + C · D','A · (B - C)'];
+function tplPool(){let p=TPL2.slice();if(S.set.level>=2)p=p.concat(TPL3);if(S.set.parenMul)p=p.concat(TPLM,TPLM);return p;}
+function anyExpr(){for(let g=0;g<20;g++){const e=fillTpl(pick(tplPool()));if(e)return e;}return fillTpl('A - (B + C)');}
+const RULE=()=>`Правило: сначала действия в скобках${S.set.parenMul?', потом умножение,':','} потом по порядку слева направо.`;
+let parOrder=[];
+function genParen(i){
+  if(i===0)parOrder=shuffle(['order','order','order','value','value','compare','place','place']);
+  const k=parOrder[i%parOrder.length];
+  if(k==='order'){const e=anyExpr();const correct=opOrder(e.ast);const txt=exprText(e.tk,e.vals);
+    return{kind:'custom',h2:(()=>{const x=[];stepsOf(e.ast,e.vals,x);return 'Первое действие: '+x[0].split(' = ')[0]+'.';})(),tx:`${RULE()} ${stepsHtml(e.ast,e.vals)}. Ответ: <b>${e.value}</b>.`,plain:'Порядок действий: '+txt,prompt:`<p>Сначала расставь порядок действий: нажимай на знаки по очереди — какое действие <b>первое</b>, какое <b>второе</b>… Потом посчитай каждое действие.</p>`,
+      mount(A,done,miss){
+        A.innerHTML=`<div class="expr" id="ex">${exprHtml(e.tk,e.vals,true)}</div><div class="row" style="justify-content:center"><button class="btn ghost sm" id="undo">Начать заново</button></div><div id="s2"></div>`;
+        let seq=[];const btns=[...A.querySelectorAll('.ex-op')];const st=[];stepsOf(e.ast,e.vals,st);
+        const paint=()=>btns.forEach(b=>{const n=seq.indexOf(+b.dataset.id);b.classList.toggle('on',n>=0);b.querySelector('.ord').textContent=n>=0?n+1:'';});
+        $('#undo').onclick=()=>{seq=[];paint();};
+        function stepRun(k){
+          if(k===0)$('#s2').innerHTML=`<p class="step" style="text-align:center">Порядок верный! Теперь считай по действиям и записывай ответы:</p><div class="slines" id="slines"></div><div id="kp2"></div>`;
+          if(k>=st.length){$('#kp2').innerHTML='';done(true,e.value,`Значение выражения: <b>${e.value}</b>.`);return;}
+          const[lhs,r]=st[k].split(' = ');const line=document.createElement('div');line.className='sline';line.innerHTML=`<b>${k+1})</b> ${lhs} = <span class="hl">?</span>`;$('#slines').appendChild(line);
+          keypad($('#kp2'),v=>{if(v===+r){line.innerHTML=`<b>${k+1})</b> ${lhs} = <b style="color:var(--ok)">${r}</b>`;setTimeout(()=>stepRun(k+1),350);return true;}miss(`${lhs} = ${v}`);return false;});
+        }
+        btns.forEach(b=>b.onclick=()=>{const id=+b.dataset.id;if(seq.includes(id))return;seq.push(id);sfx.tick();paint();
+          if(seq.length===correct.length){
+            if(!seq.every((v,j)=>v===correct[j])){miss('другой порядок действий');const ex=$('#ex');ex.classList.add('shake');setTimeout(()=>{ex.classList.remove('shake');seq=[];paint();},500);return;}
+            btns.forEach(x=>{x.disabled=true;});$('#undo').hidden=true;stepRun(0);}});
+      }};}
+  if(k==='value'){const e=anyExpr();return{kind:'input',prompt:`<p>Найди значение выражения:</p><div class="expr">${exprHtml(e.tk,e.vals,false)}</div>`,plain:exprText(e.tk,e.vals),answer:e.value,explain:`${RULE()}<br>${stepsHtml(e.ast,e.vals)}`};}
+  if(k==='compare'){let pairs=[['A - (B + C)','A - B + C'],['A - (B - C)','A - B - C'],['(A + B) - C','A + B - C'],['A + (B - C)','A + B - C'],['A - (B + C)','A - B - C'],['A - (B - C)','A - B + C']];
+    if(S.set.parenMul)pairs=pairs.concat([['(A + B) · C','A + B · C'],['A · (B + C)','A · B + C']]);
+    for(let g=0;g<60;g++){const[p1,p2]=shuffle(pick(pairs));const e1=fillTpl(p1);if(!e1)continue;const tk2=tokenize(p2),a2=parse(tk2),fl={};const v2=ev(a2,e1.vals,fl);if(fl.bad)continue;
+      const sign=e1.value<v2?'<':e1.value>v2?'>':'=';
+      return{kind:'choice',cls:'three',prompt:`<p>Сравни, не торопись. Какой знак вместо ○?</p><div class="expr" style="padding-top:4px">${exprHtml(e1.tk,e1.vals,false)}<span class="ex-o" style="color:var(--gold)">○</span>${exprHtml(tk2,e1.vals,false)}</div>`,plain:`${exprText(e1.tk,e1.vals)} ○ ${exprText(tk2,e1.vals)}`,options:['<','=','>'],answer:sign,
+        explain:`${exprText(e1.tk,e1.vals)} = ${e1.value}, а ${exprText(tk2,e1.vals)} = ${v2}. Значит, знак <b>${sign}</b>.`};}
+  }
+  // place brackets
+  for(let g=0;g<300;g++){const n=S.set.level>=2&&Math.random()<.55?4:3;const nums=Array.from({length:n},()=>rnd(2,40));const ops=Array.from({length:n-1},()=>pick(['+','-']));
+    const spans=n===3?[[0,1],[1,2]]:[[0,1],[1,2],[2,3],[0,2],[1,3]];
+    const build=sp=>{let s='';nums.forEach((v,j)=>{if(sp&&j===sp[0])s+='(';s+=v;if(sp&&j===sp[1])s+=')';if(j<n-1)s+=' '+ops[j]+' ';});return s;};
+    const evalS=s=>{const tk=tokenize(s),a=parse(tk),fl={};const v=ev(a,{},fl);return fl.bad?null:{tk,a,v};};
+    const base=evalS(build(null));if(!base)continue;
+    const cands=[];for(const sp of spans){const s=build(sp);const r=evalS(s);if(r)cands.push({s,...r});}
+    const good=cands.filter(c=>c.v!==base.v&&cands.filter(d=>d.v===c.v).length===1);if(!good.length||cands.length<2)continue;
+    const target=pick(good);const opts=shuffle(uniq([target,...shuffle(cands.filter(c=>c!==target))].slice(0,4).map(c=>exprText(c.tk,{}))));
+    if(opts.length<2)continue;
+    return{kind:'choice',cls:'wide',prompt:`<p>Куда поставить скобки, чтобы получилось <b>${target.v}</b>?</p><div class="expr" style="padding-top:4px">${exprHtml(base.tk,{},false)}<span class="ex-o">=</span><span class="ex-n" style="color:var(--gold)">${target.v}</span></div>`,
+      plain:`Скобки: ${exprText(base.tk,{})} = ${target.v}`,options:opts,answer:exprText(target.tk,{}),explain:`${exprText(target.tk,{})}: ${stepsHtml(target.a,{})}. Без скобок получилось бы ${base.v}.`};}
+  return genParen(0);
+}
+
+/* ---------- 6. magic square ---------- */
+const LO=[[2,7,6],[9,5,1],[4,3,8]];
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function genMagic(i){
+  let g=LO.map(r=>r.slice());for(let k=rnd(0,3);k>0;k--)g=g[0].map((_,c)=>g.map(r=>r[c]).reverse());if(Math.random()<.5)g=g.map(r=>r.reverse());
+  const tbl=S.set.tables;const variants=[{k:1,c:0,t:'из чисел от 1 до 9'},{k:1,c:10,t:'из чисел от 11 до 19'},...tbl.map(t=>({k:t,c:0,t:`из таблицы на ${t}`}))];
+  const v=i===0&&S.set.level===1?variants[0]:pick(variants);
+  const cells=g.flat().map(x=>x*v.k+v.c),sum=15*v.k+3*v.c;
+  const L=S.set.level,hideN=[0,3,4,5][L],hideSum=true;
+  let hidden;for(let tries=0;tries<500;tries++){hidden=new Set(shuffle([0,1,2,3,4,5,6,7,8]).slice(0,hideN));
+    const known=new Set([0,1,2,3,4,5,6,7,8].filter(x=>!hidden.has(x)));let sk=!hideSum,ch=true;
+    while(ch){ch=false;if(!sk&&LINES.some(l=>l.every(x=>known.has(x)))){sk=true;ch=true;}if(sk)for(const l of LINES){const u=l.filter(x=>!known.has(x));if(u.length===1){known.add(u[0]);ch=true;}}}
+    if(known.size===9)break;}
+  return{kind:'custom',tx:`Магическая сумма ${sum}. Квадрат по строкам: ${[0,1,2].map(r=>cells.slice(r*3,r*3+3).join(', ')).join(' / ')}.`,plain:`Магический квадрат ${v.t}, сумма ${sum}`,prompt:`<p>Магический квадрат ${v.t}. Сумма чисел в каждой строке, каждом столбце и на обеих диагоналях одинаковая. Сначала найди эту сумму сама, потом заполни пустые клетки.</p>`,
+    mount(A,done,miss){
+      const vals={};let sel=null;
+      A.innerHTML=`<div class="msum" id="msum">Шаг 1. Найди магическую сумму: сложи три числа там, где вся строка, столбец или диагональ уже заполнены.</div>
+        <div class="msq">${cells.map((c,j)=>hidden.has(j)?`<button class="mc" data-j="${j}" aria-label="Пустая клетка" disabled></button>`:`<div class="mc">${c}</div>`).join('')}</div>
+        <div id="mkp" style="margin-top:6px"></div><div class="row" style="justify-content:center"><button class="btn primary" id="chk" hidden>Проверить</button></div>`;
+      const btns=[...A.querySelectorAll('button.mc')];
+      const paint=()=>btns.forEach(b=>{const j=+b.dataset.j;b.textContent=vals[j]||'';b.classList.toggle('sel',j===sel);});
+      keypad($('#mkp'),v=>{if(v===sum){setTimeout(phase2,350);return true;}miss('магическая сумма '+v);return false;});
+      function phase2(){
+        if(A.dataset.dead)return;
+        $('#msum').innerHTML=`Магическая сумма: <span class="hl">${sum}</span>. Шаг 2. Заполни пустые клетки.`;
+        $('#mkp').innerHTML=`<div class="kp">${digitPad(false)}</div>`;$('#chk').hidden=false;btns.forEach(b=>{b.disabled=false;});sel=+btns[0].dataset.j;
+        btns.forEach(b=>b.onclick=()=>{sel=+b.dataset.j;b.classList.remove('bad');paint();});
+        const press=n=>{if(sel==null||A.dataset.dead)return;let x=vals[sel]||'';if(n==='del')x=x.slice(0,-1);else if(x.length<2)x=(x==='0'?'':x)+n;vals[sel]=x;btns.find(b=>+b.dataset.j===sel).classList.remove('bad');paint();};
+        $('#mkp').querySelectorAll('.key').forEach(k=>k.onclick=()=>press(k.dataset.n));
+        window.onkeydown=e=>{if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('del');else if(e.key==='Enter'){e.preventDefault();$('#chk').click();}};
+        paint();
+        $('#chk').onclick=()=>{const hs=[...hidden];const emp=hs.find(j=>!vals[j]);if(emp!=null){sel=emp;paint();return;}
+          const wrong=hs.filter(j=>+vals[j]!==cells[j]);
+          if(!wrong.length){done(true,'',`Все суммы равны ${sum}. Например: ${LINES[0].map(j=>cells[j]).join(' + ')} = ${sum}.`);return;}
+          wrong.forEach(j=>btns.find(b=>+b.dataset.j===j).classList.add('bad'));sel=wrong[0];paint();miss('ошибка в клетках квадрата');};
+      }
+    }};
+}
+
+/* ---------- 7. logic ---------- */
+const PUZ=[
+ {t:'Квартиры',txt:'Знайка, Гусля, Цветик и Тюбик живут в квартирах № 1, 2, 3 и 4 — каждый в своей.',cl:['Цветик живёт в квартире № 1.','Знайка живёт в квартире с самым большим номером.','Номер квартиры Гусли больше, чем у Тюбика.'],rows:['Знайка','Гусля','Цветик','Тюбик'],cols:['№ 1','№ 2','№ 3','№ 4'],sol:[3,2,0,1]},
+ {t:'Этажи',txt:'Четыре друга живут в доме из четырёх этажей, каждый на своём этаже.',cl:['Гусля живёт на 1-м этаже.','Знайка живёт выше Цветика, но ниже Тюбика.'],rows:['Знайка','Гусля','Цветик','Тюбик'],cols:['1 эт.','2 эт.','3 эт.','4 эт.'],sol:[2,0,1,3]},
+ {t:'Подарки',txt:'Друзьям подарили книгу, гусли, краски и перо — каждому по одному подарку.',cl:['Тюбик получил краски.','Гусля получил не гусли.','Знайка получил не перо и не гусли.','Цветик получил не книгу.'],rows:['Знайка','Гусля','Цветик','Тюбик'],cols:['книга','гусли','краски','перо'],sol:[0,3,1,2]},
+ {t:'Напитки',txt:'Незнайка, Пончик и Сиропчик пили сок, чай и молоко — каждый что-то одно.',cl:['Незнайка не пил ни сок, ни молоко.','Пончик не пил молоко.'],rows:['Незнайка','Пончик','Сиропчик'],cols:['сок','чай','молоко'],sol:[1,0,2]},
+ {t:'Шарфы',txt:'У Знайки, Гусли, Цветика и Тюбика шарфы разных цветов: красный, синий, зелёный и жёлтый.',cl:['Гусля носит синий шарф.','Тюбик не любит зелёный и синий.','Знайка не носит красный и жёлтый.','Шарф Цветика — не красный.'],rows:['Знайка','Гусля','Цветик','Тюбик'],cols:['красный','синий','зелёный','жёлтый'],sol:[2,1,3,0]},
+ {t:'На скамейке',txt:'Цветик, Знайка и Тюбик сидят на скамейке в ряд.',cl:['Знайка сидит не с краю.','Цветик сидит слева от Знайки.'],rows:['Цветик','Знайка','Тюбик'],cols:['слева','в центре','справа'],sol:[0,1,2]},
+ {t:'Питомцы',txt:'У феи, ворона и дракона есть любимые камни: изумруд, рубин и сапфир.',cl:['Дракон любит не изумруд.','Ворон любит рубин.'],rows:['Фея','Ворон','Дракон'],cols:['изумруд','рубин','сапфир'],sol:[0,1,2]},
+];
+let puzOrder=[];
+function genLogic(i){
+  if(i===0)puzOrder=shuffle(PUZ.map((_,k)=>k));
+  const P=PUZ[puzOrder[i%puzOrder.length]];
+  return{kind:'custom',tx:'Ответ: '+P.rows.map((r,k)=>`${r} — ${P.cols[P.sol[k]]}`).join(', ')+'.',plain:'Логика: '+P.t,prompt:`<p>${P.txt}</p><ol class="clues">${P.cl.map(c=>`<li>${c}</li>`).join('')}</ol><p class="mini">Нажимай на клетку: один раз — ✓ (да), два раза — ✗ (нет), три — пусто. Когда ставишь ✓, в строке и столбце сами появятся ✗.</p>`,
+    mount(A,done,miss){
+      const n=P.rows.length,m=P.cols.length;const g=Array.from({length:n},()=>Array(m).fill(0));let tries=0;
+      A.innerHTML=`<div class="lgwrap"><table class="lg"><thead><tr><th></th>${P.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${P.rows.map((r,ri)=>`<tr data-r="${ri}"><th class="rn">${r}</th>${P.cols.map((_,ci)=>`<td><button class="lgc" data-r="${ri}" data-c="${ci}" aria-label="${r}, ${P.cols[ci]}"></button></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+        <div class="row" style="justify-content:center"><button class="btn ghost sm" id="hint">Подсказка</button><button class="btn primary" id="chk">Проверить</button></div>`;
+      const cell=(r,c)=>A.querySelector(`.lgc[data-r="${r}"][data-c="${c}"]`);
+      const paint=()=>{for(let r=0;r<n;r++)for(let c=0;c<m;c++){const b=cell(r,c);b.textContent=g[r][c]===1?'✓':g[r][c]===2?'✗':'';b.className='lgc'+(g[r][c]===1?' y':g[r][c]===2?' n':'');}};
+      const setY=(r,c)=>{g[r][c]=1;for(let k=0;k<m;k++)if(k!==c&&g[r][k]===0)g[r][k]=2;for(let k=0;k<n;k++)if(k!==r&&g[k][c]===0)g[k][c]=2;};
+      A.querySelectorAll('.lgc').forEach(b=>b.onclick=()=>{const r=+b.dataset.r,c=+b.dataset.c;A.querySelectorAll('tr.badrow').forEach(t=>t.classList.remove('badrow'));const s=(g[r][c]+1)%3;if(s===1)setY(r,c);else g[r][c]=s;sfx.tick();paint();});
+      $('#hint').onclick=()=>{const r=[...Array(n).keys()].find(r=>g[r][P.sol[r]]!==1);if(r==null)return;for(let k=0;k<m;k++)if(g[r][k]===1)g[r][k]=0;setY(r,P.sol[r]);paint();};
+      $('#chk').onclick=()=>{const bad=[];for(let r=0;r<n;r++){const ys=g[r].map((v,c)=>v===1?c:-1).filter(c=>c>=0);if(ys.length!==1||ys[0]!==P.sol[r])bad.push(r);}
+        if(!bad.length){done(true,'',`Ответ: ${P.rows.map((r,q)=>`${r} — ${P.cols[P.sol[q]]}`).join(', ')}.`);return;}
+        bad.forEach(r=>A.querySelector(`tr[data-r="${r}"]`).classList.add('badrow'));miss('ошибка в логической таблице');};
+      paint();
+    }};
+}
+
+/* ---------- 8. Euler ---------- */
+const EU_SETS=[
+ {A:'в таблице на 2',fa:n=>n%2===0&&n<=20,B:'в таблице на 3',fb:n=>n%3===0&&n<=30,max:30},
+ {A:'чётные',fa:n=>n%2===0,B:'больше 20',fb:n=>n>20,max:40},
+ {A:'в таблице на 4',fa:n=>n%4===0&&n<=40,B:'в таблице на 3',fb:n=>n%3===0&&n<=30,max:40},
+ {A:'в таблице на 5',fa:n=>n%5===0&&n<=50,B:'в таблице на 2',fb:n=>n%2===0&&n<=20,max:50},
+ {A:'однозначные',fa:n=>n<10,B:'нечётные',fb:n=>n%2===1,max:30},
+];
+const EU_CTX=[
+ {la:'феи',lb:'драконы',a:'любят сказки про фей',b:'любят сказки про драконов',both:'любят и те, и другие',oa:'любят только сказки про фей',ob:'любят только сказки про драконов',all:'каждый любит хотя бы одни из этих сказок'},
+ {la:'плавание',lb:'ролики',a:'умеют плавать',b:'умеют кататься на роликах',both:'умеют и то, и другое',oa:'умеют только плавать',ob:'умеют только кататься на роликах',all:'каждый умеет хотя бы что-то одно'},
+ {la:'шахматы',lb:'танцы',a:'ходят на шахматы',b:'ходят на танцы',both:'ходят и туда, и туда',oa:'ходят только на шахматы',ob:'ходят только на танцы',all:'каждый ходит хотя бы в один кружок'},
+];
+function euSvg(la,lb,v){const t=(x,y,s)=>s==='?'?`<text x="${x}" y="${y}" class="eu-q" text-anchor="middle">?</text>`:s!=null&&s!==''?`<text x="${x}" y="${y}" class="eu-n" text-anchor="middle">${s}</text>`:'';
+  return `<svg class="eu" viewBox="0 0 340 214" role="img" aria-label="Два пересекающихся круга: ${esc(la)} и ${esc(lb)}"><rect x="3" y="3" width="334" height="208" rx="16" class="eu-u"/>
+  <circle cx="132" cy="120" r="78" class="eu-a"/><circle cx="208" cy="120" r="78" class="eu-b"/>
+  <text x="96" y="30" class="eu-l" text-anchor="middle">${esc(la)}</text><text x="246" y="30" class="eu-l" text-anchor="middle">${esc(lb)}</text>
+  ${t(96,130,v.a)}${t(170,130,v.ab)}${t(244,130,v.b)}${v.chip!=null?`<rect x="146" y="40" width="48" height="34" rx="10" class="eu-chip"/><text x="170" y="65" class="eu-n" text-anchor="middle" style="font-size:22px">${v.chip}</text>`:''}</svg>`;}
+function genEuler(i){
+  if(i%2===0){const E=pick(EU_SETS);const reg=rnd(0,3);let n=0;
+    for(let g=0;g<200;g++){const x=rnd(1,E.max);const a=E.fa(x),b=E.fb(x);const r=a&&b?2:a?0:b?1:3;if(r===reg){n=x;break;}}
+    if(!n)n=rnd(1,E.max);const a=E.fa(n),b=E.fb(n);const R=['Только в фиолетовом круге','Только в оранжевом круге','В обоих кругах сразу','Вне кругов'];
+    return{kind:'choice',cls:'wide',plain:`Круги: ${E.A} / ${E.B}, число ${n}`,prompt:`<p>Фиолетовый круг — числа <b>${E.A}</b>. Оранжевый круг — числа <b>${E.B}</b>. Куда попадёт число?</p>${euSvg(E.A,E.B,{chip:n})}`,
+      options:R,answer:R[a&&b?2:a?0:b?1:3],explain:`${n}: «${E.A}» — ${a?'да':'нет'}, «${E.B}» — ${b?'да':'нет'}. Значит, ${(a&&b?'в обоих кругах':a?'только в фиолетовом':b?'только в оранжевом':'вне кругов')}.`};}
+  const C=pick(EU_CTX);const X=rnd(7,15),Y=rnd(6,14),Z=rnd(2,Math.min(X,Y)-3);const kind=pick(['oa','ob','all']);
+  const ans=kind==='oa'?X-Z:kind==='ob'?Y-Z:X+Y-Z;
+  const q=kind==='all'?`Сколько всего ребят в классе, если ${C.all}?`:`Сколько ребят ${C[kind]}?`;
+  const v=kind==='oa'?{a:'?',ab:Z}:kind==='ob'?{b:'?',ab:Z}:{a:'',b:'',ab:Z};
+  return{kind:'input',plain:q,prompt:`<p>В классе ${X} ребят ${C.a}, ${Y} ${C.b}, а ${Z} из них ${C.both}.</p><p><b>${q}</b></p>${euSvg(C.la+' — '+X,C.lb+' — '+Y,v)}`,answer:ans,
+    explain:kind==='oa'?`В фиолетовом круге всего ${X}, из них ${Z} — в общей части. Только фиолетовые: ${X} − ${Z} = ${ans}.`:kind==='ob'?`В оранжевом круге всего ${Y}, из них ${Z} — в общей части. Только оранжевые: ${Y} − ${Z} = ${ans}.`:`Только первые: ${X} − ${Z} = ${X-Z}, только вторые: ${Y} − ${Z} = ${Y-Z}, и ещё ${Z} в середине. Всего: ${X-Z} + ${Y-Z} + ${Z} = ${ans}. Если просто сложить ${X} + ${Y}, середину посчитаем два раза!`};
+}
+
+/* ---------- 9. kitchen ---------- */
+const KITCHEN=[
+ ()=>{const a=rnd(3,6),b=rnd(2,5);return{t:`Фрекен Бок испекла плюшки и разложила их на ${b} ${pl(b,'противень','противня','противней')}, по ${a} ${pl(a,'плюшке','плюшки','плюшек')} на каждом. Сколько всего плюшек?`,r:`${a} · ${b}`,w:[`${a} + ${b}`,`${a} · ${b+1}`,`${b} + ${b}`],ans:a*b,x:`По ${a} взяли ${b} раз: ${a} · ${b} = ${a*b}.`};},
+ ()=>{const n=rnd(16,30),x=rnd(3,7),y=rnd(3,7);return{t:`Фрекен Бок испекла ${n} ${pl(n,'плюшку','плюшки','плюшек')}. Малыш съел ${x}, а Карлсон — ${y}. Сколько плюшек осталось?`,r:`${n} − (${x} + ${y})`,w:[`${n} − ${x} + ${y}`,`${n} + ${x} + ${y}`,`${x} + ${y}`],ans:n-x-y,x:`Вместе съели ${x} + ${y} = ${x+y}. Осталось ${n} − ${x+y} = ${n-x-y}.`};},
+ ()=>{const a=rnd(2,5),b=rnd(2,5),c=rnd(2,9);return{t:`Фрекен Бок разложила тефтели на ${b} ${pl(b,'тарелку','тарелки','тарелок')}, по ${a} на каждую, и ещё ${c} осталось на сковородке. Сколько всего тефтелей?`,r:`${a} · ${b} + ${c}`,w:[`${a} + ${b} + ${c}`,`${a} · ${b} − ${c}`,`${a} · (${b} + ${c})`],ans:a*b+c,x:`На тарелках ${a} · ${b} = ${a*b}, и ещё ${c}: ${a*b} + ${c} = ${a*b+c}.`};},
+ ()=>{const n=rnd(12,25),x=rnd(3,9),y=rnd(2,8);return{t:`В банке было ${n} конфет. Карлсон съел ${x}, а потом Фрекен Бок положила в банку ещё ${y}. Сколько конфет стало в банке?`,r:`${n} − ${x} + ${y}`,w:[`${n} − (${x} + ${y})`,`${n} + ${x} + ${y}`,`${n} − ${x} − ${y}`],ans:n-x+y,x:`После Карлсона: ${n} − ${x} = ${n-x}. Потом добавили: ${n-x} + ${y} = ${n-x+y}.`};},
+ ()=>{const a=rnd(2,5),b=rnd(2,4),c=rnd(1,a*b-1);return{t:`У Фрекен Бок ${b} ${pl(b,'пакет','пакета','пакетов')} муки, в каждом по ${a} кг. На пироги ушло ${c} кг. Сколько килограммов муки осталось?`,r:`${a} · ${b} − ${c}`,w:[`${a} + ${b} − ${c}`,`${a} · ${b} + ${c}`,`${a} · ${b} − ${a}`],ans:a*b-c,x:`Было ${a} · ${b} = ${a*b} кг. Осталось ${a*b} − ${c} = ${a*b-c} кг.`};},
+ ()=>{const a=rnd(2,4),b=rnd(2,4),c=rnd(2,5);return{t:`Фрекен Бок купила ${b} ${pl(b,'бутылку','бутылки','бутылок')} сока по ${a} л и ${c} ${pl(c,'пакет','пакета','пакетов')} молока по 1 л. Сколько литров всего?`,r:`${a} · ${b} + 1 · ${c}`,w:[`${a} + ${b} + ${c}`,`(${a} + ${b}) · ${c}`,`${a} · ${b} · ${c}`],ans:a*b+c,x:`Сок: ${a} · ${b} = ${a*b} л, молоко: 1 · ${c} = ${c} л. Всего ${a*b} + ${c} = ${a*b+c} л.`};},
+ ()=>{const n=rnd(10,20),b=rnd(4,8),c=rnd(1,b-1);return{t:`На полке стояло ${n} банок варенья. Карлсон унёс ${b} ${pl(b,'банку','банки','банок')}, но ${c} потом вернул. Сколько банок стало на полке?`,r:`${n} − ${b} + ${c}`,w:[`${n} − ${b} − ${c}`,`${n} + ${b} − ${c}`,`${n} − (${b} + ${c})`],ans:n-b+c,x:`${n} − ${b} = ${n-b}, потом ${n-b} + ${c} = ${n-b+c}.`};},
+ ()=>{const a=rnd(6,12),b=a+rnd(3,9);return{t:`Фрекен Бок испекла ${a} ${pl(a,'ватрушку','ватрушки','ватрушек')} и ${b} ${pl(b,'плюшку','плюшки','плюшек')}. На сколько плюшек больше, чем ватрушек?`,r:`${b} − ${a}`,w:[`${b} + ${a}`,`${a} · 2`,`${b} − 1`],ans:b-a,x:`Чтобы узнать «на сколько больше», из большего вычитаем меньшее: ${b} − ${a} = ${b-a}.`};},
+ ()=>{const a=rnd(2,5),b=rnd(2,5),c=rnd(1,a*b-1);return{t:`У феи ${b} ${pl(b,'флакон','флакона','флаконов')} зелья, в каждом по ${a} ${pl(a,'капле','капли','капель')}. Для заклинания она вылила ${c} ${pl(c,'каплю','капли','капель')}. Сколько капель осталось?`,r:`${a} · ${b} − ${c}`,w:[`${a} + ${b} − ${c}`,`${a} · ${b} + ${c}`,`${a} · (${b} − ${c})`],ans:a*b-c,x:`Было ${a} · ${b} = ${a*b} капель. Осталось ${a*b} − ${c} = ${a*b-c}.`};},
+];
+let kitOrder=[];
+const SCT=['G','W','G+','D','G-','G+','D','C','G-'];
+function genKitchen(i){
+  if(i===0)kitOrder=shuffle(KITCHEN.map((_,k)=>k));
+  const idx=kitOrder[i%kitOrder.length],p=KITCHEN[idx]();const opts=shuffle(uniq([p.r,...p.w])).slice(0,4);
+  const nums=p.r.match(/\d+/g).map(Number),ty=SCT[idx],base=ty[0],last=nums[nums.length-1];
+  const right=base==='G'?scheme('G',{a:nums[0],b:nums[1],x:ty==='G+'?last:ty==='G-'?-last:0}):base==='W'?scheme('W',{n:nums[0],x:nums[1],y:nums[2]}):base==='D'?scheme('D',{n:nums[0],x:nums[1],y:nums[2]}):scheme('C',{a:Math.min(nums[0],nums[1]),b:Math.max(nums[0],nums[1])});
+  const sch=shuffle([right,...shuffle(['G','W','D','C'].filter(x=>x!==base)).slice(0,2).map(x=>SC_ALT[x](nums))]);
+  return{kind:'custom',tx:`${p.r} = <b>${p.ans}</b>. ${p.x}`,plain:p.t,prompt:`<p>${p.t}</p>`,mount(A,done,miss){
+    A.innerHTML=`<p class="step">Шаг 1. Какая схема подходит к задаче?</p><div class="schopts">${sch.map((x,k)=>`<button class="schopt" data-k="${k}">${x}</button>`).join('')}</div><div id="s1" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div><div id="s2" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>`;
+    const ss=[...A.querySelectorAll('.schopt')];
+    ss.forEach(b=>b.onclick=()=>{if(sch[+b.dataset.k]!==right){b.classList.add('wrong');b.disabled=true;miss('не та схема');return;}
+      b.classList.add('right');ss.forEach(x=>{x.disabled=true;if(x!==b)x.hidden=true;});sfx.tick();$('#fb').innerHTML='';
+      $('#s1').innerHTML=`<p class="step">Верно! Шаг 2. Выбери выражение:</p><div class="opts wide">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${o}</button>`).join('')}</div>`;
+      const bs=[...$('#s1').querySelectorAll('.opt')];
+      bs.forEach(o=>o.onclick=()=>{const v0=opts[+o.dataset.k];if(v0!==p.r){o.classList.add('wrong');o.disabled=true;miss(v0);return;}
+        o.classList.add('right');bs.forEach(x=>{x.disabled=true;});sfx.tick();$('#fb').innerHTML='';
+        $('#s2').innerHTML=`<p class="step">Верно! Шаг 3. Вычисли: ${p.r}</p><div id="kp2"></div>`;
+        keypad($('#kp2'),v=>{if(v===p.ans){done(true,v,p.x);return true;}miss(`${p.r} = ${v}`);return false;});
+        $('#s2').scrollIntoView({block:'nearest',behavior:'smooth'});});
+      $('#s1').scrollIntoView({block:'nearest',behavior:'smooth'});});
+  }};
+}
+
+/* ---------- 10. boss ---------- */
+const OLY=[
+ {q:'На 3 ветках сидят по 4 ворона. Сколько всего лап у этих воронов?',a:24,x:'Воронов 4 · 3 = 12. У каждого 2 лапы: 2 · 12 = 24.'},
+ {q:'Бревно распилили на 5 частей. Сколько сделали распилов?',a:4,x:'Каждый распил добавляет одну часть: 1 часть → 2 части за 1 распил. Для 5 частей нужно 4 распила.'},
+ {q:'Чтобы подняться с 1-го на 3-й этаж, нужно пройти 20 ступенек. Сколько ступенек с 1-го на 5-й этаж?',a:40,x:'С 1-го на 3-й — это 2 пролёта, по 10 ступенек. С 1-го на 5-й — 4 пролёта: 10 · 4 = 40.'},
+ {q:'Сумма трёх одинаковых чисел равна 21. Какое это число?',a:7,x:'7 + 7 + 7 = 7 · 3 = 21.'},
+ {q:'Фея задумала число, умножила его на 3 и прибавила 4. Получилось 19. Какое число задумала фея?',a:5,x:'Идём назад: 19 − 4 = 15. Какое число умножили на 3, чтобы получить 15? Это 5.'},
+ {q:'Вдоль дорожки растут 5 кустов роз в ряд. Между соседними кустами 3 метра. Сколько метров от первого куста до последнего?',a:12,x:'Между 5 кустами 4 промежутка: 3 · 4 = 12 метров.'},
+ {q:'Продолжи ряд: 1, 2, 4, 7, 11, …',a:16,x:'Прибавляем по очереди 1, 2, 3, 4, а потом 5: 11 + 5 = 16.'},
+ {q:'Ворону 4 года, а фее 9 лет. На сколько лет фея будет старше ворона через 5 лет?',a:5,x:'Разница в возрасте не меняется: 9 − 4 = 5 лет.'},
+ {q:'Яблок меньше 20. Их можно разложить поровну по 3 в тарелку и поровну по 4 в тарелку. Сколько яблок?',a:12,x:'Число должно быть в таблице на 3 и в таблице на 4, и меньше 20. Это 12.'},
+ {q:'У трёх драконов по 2 головы, а у двух драконов — по 3 головы. Сколько всего голов?',a:12,x:'2 · 3 = 6 и 3 · 2 = 6. Всего 6 + 6 = 12.'},
+ {q:'Сколько всего ног у 2 котов и 3 кур?',a:14,x:'У котов 4 · 2 = 8, у кур 2 · 3 = 6. Всего 8 + 6 = 14.'},
+ {q:'Брату 7 лет, а сестра на 2 года младше. Сколько лет будет сестре, когда брату исполнится 10?',a:8,x:'Сестре сейчас 7 − 2 = 5. Через 3 года ей будет 5 + 3 = 8.'},
+ {q:'Сколько нужно сложить двоек, чтобы получилось 16?',a:8,x:'2 · 8 = 16, значит восемь двоек.'},
+ {q:'Гусеница ползёт по столбу высотой 5 м. Днём она поднимается на 3 м, а ночью сползает на 2 м. На какой день она доберётся до верхушки?',a:3,x:'1-й день: 3 м, ночью 1 м. 2-й день: 4 м, ночью 2 м. 3-й день: 2 + 3 = 5 м — вершина!'},
+ {q:'В коробке 3 красных и 4 синих карандаша. Сколько карандашей нужно взять не глядя, чтобы среди них точно был красный?',a:5,x:'Может не повезти: сначала вытащим все 4 синих. Пятый точно будет красным.'},
+ {q:'Фея задумала число, прибавила 5 и умножила на 2. Получилось 18. Какое число она задумала?',a:4,x:'Назад: 18 — это 9 · 2, значит до умножения было 9. 9 − 5 = 4.'},
+ {q:'Кукушка в часах кукует 1 раз в час, 2 раза в 2 часа и 3 раза в 3 часа. Сколько раз она прокукует с часа до трёх часов, считая оба?',a:6,x:'1 + 2 + 3 = 6.'},
+];
+let olyOrder=[];
+function genBoss(i){if(i===0)olyOrder=shuffle(OLY.map((_,k)=>k));const o=OLY[olyOrder[i%olyOrder.length]];return{kind:'input',plain:o.q,h2:'Начало решения: '+(o.x.match(/^.*?[.!?:](?=\s|$)/)||[o.x])[0],prompt:`<p>${o.q}</p>`,answer:o.a,explain:o.x};}
+function bossHeader({ok,total}){const hp=Math.max(0,total-ok);return `<div class="boss" aria-label="Туча: осталось ${hp} из ${total}"><svg viewBox="0 0 64 64" aria-hidden="true"><g fill="#a79dc0"><circle cx="22" cy="34" r="14"/><circle cx="40" cy="28" r="17"/><circle cx="50" cy="40" r="11"/><rect x="12" y="36" width="46" height="15" rx="7"/></g><circle cx="30" cy="35" r="3" fill="#241634"/><circle cx="44" cy="35" r="3" fill="#241634"/><path d="M25 29 l8 3 M49 29 l-8 3" stroke="#241634" stroke-width="2.5" stroke-linecap="round"/><path d="M32 45 q5 -4 10 0" fill="none" stroke="#241634" stroke-width="2.5" stroke-linecap="round"/></svg><div class="hp"><i style="width:${hp/total*100}%"></i></div><b style="color:var(--gold)">${hp}</b></div><p class="mini">Тучка-Ворчунья закрыла солнце. Каждый верный ответ разгоняет её. Не торопись — думай!</p>`;}
+
+/* ---------- badges, streaks ---------- */
+const starSum=pf=>STATIONS.reduce((a,s)=>a+((pf.st[s.id]||{}).stars||0),0);
+const BADGES=[
+ ['first','🌟','Первая звезда',pf=>starSum(pf)>=1],['ten','💫','10 звёзд',pf=>starSum(pf)>=10],['thirty','🌠','30 звёзд',pf=>starSum(pf)>=30],
+ ['half','🎖️','Половина пути',pf=>STATIONS.filter(s=>(pf.st[s.id]||{}).stars>0).length>=STATIONS.length/2],['all','👑','Все полянки пройдены',pf=>STATIONS.every(s=>(pf.st[s.id]||{}).stars>0)],
+ ['gold','🥇','Три полянки на три звезды',pf=>STATIONS.filter(s=>(pf.st[s.id]||{}).stars===3).length>=3],
+ ['book','📘','Таблица собрана',pf=>Object.values(pf.book||{}).some(b=>Object.keys(b).length>=10)],
+ ['s5','🔥','5 верных подряд',pf=>(pf.best||0)>=5],['s10','⚡','10 верных подряд',pf=>(pf.best||0)>=10],['cr','💎','50 кристаллов',pf=>pf.crystals>=50],
+];
+function checkBadges(){const pf=PF();pf.badges=pf.badges||{};for(const[id,ic,name,cond] of BADGES){if(!pf.badges[id]&&cond(pf)){pf.badges[id]=Date.now();toast(`Новый значок: ${ic} ${name}`);sfx.win();}}save();}
+function bump(good){const pf=PF();pf.streak=good?(pf.streak||0)+1:0;pf.best=Math.max(pf.best||0,pf.streak);if(good&&(pf.streak===5||pf.streak===10))checkBadges();return pf.streak;}
+// arcades: +1 life for every 5 correct answers in a row
+function lifeBonus(streak,lives){if(streak>0&&streak%5===0&&isFinite(lives)&&lives<S.set.lives){toast('+1 жизнь за 5 верных подряд!');return lives+1;}return lives;}
+
+/* ---------- step runner ---------- */
+function stepRunner(box,steps,miss,onDone){
+  box.innerHTML='<div class="slines"></div><div class="kpx"></div>';const L=box.querySelector('.slines'),K=box.querySelector('.kpx');
+  const run=k=>{if(k>=steps.length){K.innerHTML='';onDone();return;}const s=steps[k];const line=document.createElement('div');line.className='sline';line.innerHTML=`<b>${k+1})</b> ${s.t} = <span class="hl">?</span>`;L.appendChild(line);
+    keypad(K,v=>{if(v===s.a){line.innerHTML=`<b>${k+1})</b> ${s.t} = <b style="color:var(--ok)">${s.a}</b>`;setTimeout(()=>run(k+1),350);return true;}miss(`${s.t} = ${v}`);return false;});};
+  run(0);
+}
+
+/* ---------- rectangles and area ---------- */
+function rectGrid(a,b,draw){const C=8,R=6;let h='';for(let r=0;r<R;r++)for(let c=0;c<C;c++)h+=`<i class="rc${!draw&&r<b&&c<a?' on':''}" data-r="${r}" data-c="${c}"></i>`;return `<div class="rgrid${draw?' draw':''}" style="grid-template-columns:repeat(${C},1fr)">${h}</div>`;}
+function genRect(i){
+  let a=rnd(2,7),b=rnd(2,5);if(a===b)a=a<7?a+1:a-1;
+  const ex=`В каждом ряду ${a} ${pl(a,'клетка','клетки','клеток')}, рядов ${b}: ${a} · ${b} = ${a*b}. Если считать по столбцам, получится ${b} · ${a} — столько же.`;
+  if(i%2===0)return{kind:'custom',fact:S.set.tables.includes(a)?[a,b]:null,plain:`Площадь прямоугольника ${a} на ${b}`,tx:ex,h2:`Посчитай клетки в одном ряду и число рядов.`,
+    prompt:`<p>Это грядка дракончика. Одна клетка — 1 кв. см. Найди её площадь: посчитай клетки в ряду, ряды и перемножь.</p>${rectGrid(a,b,false)}`,
+    mount(A,done,miss){stepRunner(A,[{t:'Клеток в одном ряду',a},{t:'Рядов',a:b},{t:`Площадь: ${a} · ${b}`,a:a*b}],miss,()=>done(true,a*b,ex));}};
+  return{kind:'custom',plain:`Нарисовать прямоугольник: ${b} рядов по ${a}`,tx:ex,h2:`Рядов должно быть ${b} (сверху вниз), а в каждом ряду ${a} (слева направо).`,
+    prompt:`<p>Нарисуй грядку: <b>${b} ${pl(b,'ряд','ряда','рядов')} по ${a} ${pl(a,'клетке','клетки','клеток')}</b>. Проведи пальцем или мышкой от одного угла до другого.</p>`,
+    mount(A,done,miss){
+      A.innerHTML=`${rectGrid(0,0,true)}<p class="mini" id="rinfo" style="text-align:center">Пока ничего не нарисовано</p><div class="row" style="justify-content:center"><button class="btn primary" id="chk">Проверить</button></div><div id="s2"></div>`;
+      const g=A.querySelector('.rgrid');let st=null,sel=null,lock=false;
+      const cellAt=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.classList&&el.classList.contains('rc')&&g.contains(el)?[+el.dataset.r,+el.dataset.c]:null;};
+      const paint=()=>{g.querySelectorAll('.rc').forEach(x=>{const r=+x.dataset.r,c=+x.dataset.c;x.classList.toggle('on',!!sel&&r>=sel.r0&&r<=sel.r1&&c>=sel.c0&&c<=sel.c1);});$('#rinfo').textContent=sel?`Рядов: ${sel.r1-sel.r0+1}, в каждом ряду: ${sel.c1-sel.c0+1}`:'Пока ничего не нарисовано';};
+      const upd=p=>{if(!st||!p)return;sel={r0:Math.min(st[0],p[0]),r1:Math.max(st[0],p[0]),c0:Math.min(st[1],p[1]),c1:Math.max(st[1],p[1])};paint();};
+      g.addEventListener('pointerdown',e=>{if(lock||A.dataset.dead)return;const p=cellAt(e);if(!p)return;st=p;upd(p);try{g.setPointerCapture(e.pointerId);}catch(x){}});
+      g.addEventListener('pointermove',e=>{if(st&&!lock)upd(cellAt(e));});
+      ['pointerup','pointercancel'].forEach(ev=>g.addEventListener(ev,()=>{st=null;}));
+      $('#chk').onclick=()=>{if(!sel)return;const rr=sel.r1-sel.r0+1,cc=sel.c1-sel.c0+1;
+        if(rr!==b||cc!==a){miss(`нарисовано ${rr} рядов по ${cc}`);g.classList.add('shake');setTimeout(()=>g.classList.remove('shake'),400);return;}
+        lock=true;$('#chk').hidden=true;$('#fb').innerHTML='';const s2=$('#s2');s2.innerHTML='<p class="step" style="text-align:center">Верно! Теперь найди площадь грядки:</p><div id="s3"></div>';
+        stepRunner($('#s3'),[{t:`Площадь: ${a} · ${b}`,a:a*b}],miss,()=>done(true,a*b,ex));};
+    }};
+}
+
+/* ---------- strategy trainer ---------- */
+function genTricks(i){
+  const t=pick(S.set.tables),m=rnd(3,9),d=m+m;let how,steps;
+  if(t===2){how=`Умножить на 2 — значит удвоить ${m}.`;steps=[{t:`${m} + ${m}`,a:d}];}
+  else if(t===3){how=`Удвой ${m}, потом прибавь ${m} ещё раз.`;steps=[{t:`${m} + ${m}`,a:d},{t:`${d} + ${m}`,a:d+m}];}
+  else if(t===4){how=`Удвой ${m}, а потом удвой ещё раз.`;steps=[{t:`${m} + ${m}`,a:d},{t:`${d} + ${d}`,a:d+d}];}
+  else if(t===5&&m%2===0){how=`Возьми ${m} десять раз, а потом найди половину.`;steps=[{t:`10 · ${m}`,a:10*m},{t:`Половина от ${10*m}`,a:5*m}];}
+  else if(t===5){how=`Удвой ${m} дважды — это четыре раза. Потом прибавь ${m} ещё раз.`;steps=[{t:`${m} + ${m}`,a:d},{t:`${d} + ${d}`,a:2*d},{t:`${2*d} + ${m}`,a:5*m}];}
+  else if(t===6){how=`Возьми ${m} пять раз и прибавь ещё ${m}.`;steps=[{t:`5 · ${m}`,a:5*m},{t:`${5*m} + ${m}`,a:6*m}];}
+  else if(t===7){how=`Пять раз по ${m} и ещё два раза по ${m}.`;steps=[{t:`5 · ${m}`,a:5*m},{t:`2 · ${m}`,a:2*m},{t:`${5*m} + ${2*m}`,a:7*m}];}
+  else if(t===8){how=`Удвой ${m} три раза подряд.`;steps=[{t:`${m} + ${m}`,a:d},{t:`${d} + ${d}`,a:2*d},{t:`${2*d} + ${2*d}`,a:4*d}];}
+  else{how=`Возьми ${m} десять раз и убери ${m} один раз.`;steps=[{t:`10 · ${m}`,a:10*m},{t:`${10*m} − ${m}`,a:9*m}];}
+  steps.push({t:`Значит, ${m} · ${t}`,a:t*m});
+  return{kind:'custom',fact:[t,m],plain:`Приём: ${m} · ${t}`,h1:how,h2:`Первое действие: ${steps[0].t}.`,tx:steps.map((s,k)=>`${k+1}) ${s.t} = ${s.a}`).join('; ')+'.',
+    prompt:`<p>Найди <b>${m} · ${t}</b> хитрым приёмом, без таблицы.</p><div class="tip">${how}</div>`,
+    mount(A,done,miss){stepRunner(A,steps,miss,()=>done(true,t*m,`${m} · ${t} = ${t*m}. Этот приём подходит для любого числа: так можно найти ответ, даже если забыла таблицу.`));}};
+}
+
+/* ---------- build an expression ---------- */
+function genBuild(i){
+  let pool=['A - (B + C)','A - (B - C)','(A + B) - C','A + (B - C)','A - B + C','A - B - C','A + B - C','A + B + C'];
+  if(S.set.parenMul)pool=pool.concat(['A + B · C','(A + B) · C','A · B - C','A - B · C','A · (B + C)','A · (B - C)','A · B + C']);
+  let e=null;for(let g=0;g<30&&!e;g++)e=fillTpl(pick(pool));if(!e)e=fillTpl('A - B + C');
+  const n=['A','B','C'].map(k=>e.vals[k]),target=e.value,OPS=S.set.parenMul?['+','-','·']:['+','-'];
+  const sol=exprText(e.tk,e.vals);
+  return{kind:'custom',plain:`Составить выражение из ${n.join(', ')} с ответом ${target}`,tx:`Например: ${sol} = ${target}.`,h2:`Первый знак: «${opSym(e.tk.find(t=>t.t==='op').op)}».`,
+    prompt:`<p>Расставь знаки и, если нужно, скобки, чтобы получилось <b>${target}</b>. Нажимай на окошки между числами.</p>`,
+    mount(A,done,miss){
+      const ops=[null,null];let br=0;
+      A.innerHTML=`<div class="expr" id="bex" style="padding-top:4px"></div><div class="seg" id="bbr" style="justify-content:center;margin:12px auto 0"><button data-v="0">без скобок</button><button data-v="1">(□ □) □</button><button data-v="2">□ (□ □)</button></div><div class="row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="chk">Проверить</button></div>`;
+      const paint=()=>{const P=x=>`<span class="ex-p">${x}</span>`,O=k=>`<button class="ex-op${ops[k]?' on':''}" data-k="${k}" aria-label="знак ${k+1}">${ops[k]?opSym(ops[k]):'?'}</button>`,N=k=>`<span class="ex-n">${n[k]}</span>`;
+        $('#bex').innerHTML=(br===1?P('('):'')+N(0)+O(0)+(br===2?P('('):'')+N(1)+(br===1?P(')'):'')+O(1)+N(2)+(br===2?P(')'):'')+`<span class="ex-o">=</span><span class="ex-n" style="color:var(--gold)">${target}</span>`;
+        $('#bex').querySelectorAll('.ex-op').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;ops[k]=OPS[(OPS.indexOf(ops[k])+1)%OPS.length];sfx.tick();paint();});
+        $('#bbr').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.v===br)));};
+      $('#bbr').querySelectorAll('button').forEach(b=>b.onclick=()=>{br=+b.dataset.v;paint();});
+      $('#chk').onclick=()=>{if(!ops[0]||!ops[1])return;const s=(br===1?'(':'')+n[0]+ops[0]+(br===2?'(':'')+n[1]+(br===1?')':'')+ops[1]+n[2]+(br===2?')':'');
+        const tk=tokenize(s),ast=parse(tk);const calc=x=>x.t==='n'?x.tok.v:(x.op==='+'?calc(x.l)+calc(x.r):x.op==='-'?calc(x.l)-calc(x.r):calc(x.l)*calc(x.r));const v=calc(ast);
+        if(v===target)done(true,exprText(tk,{}),`${exprText(tk,{})} = ${target}. ${stepsHtml(ast,{})}`);else miss(`${exprText(tk,{})} = ${v}`);};
+      paint();
+    }};
+}
+
+/* ---------- bar models for word problems ---------- */
+function scheme(type,p){
+  const B=(x,y,w,h,t,cls)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" class="sb ${cls||''}"/><text x="${x+w/2}" y="${y+h/2+6}" class="st" text-anchor="middle">${t}</text>`;
+  const Q=(x,w,y,t)=>`<path d="M${x} ${y} v8 h${w} v-8" class="sq"/><text x="${x+w/2}" y="${y+26}" class="st sqq" text-anchor="middle">${t||'?'}</text>`;
+  let h='';
+  if(type==='G'){const b=Math.min(p.b,6),w=Math.min(44,(p.x>0?190:250)/b);let x=10;for(let k=0;k<b;k++){h+=B(x,14,w-3,34,p.a,p.x<0&&k===b-1?'':'');x+=w;}
+    if(p.x>0){h+=B(x,14,56,34,p.x,'s2');x+=59;h+=Q(10,x-13,54);}else if(p.x<0){h+=Q(10,x-13,54,'?');h+=`<text x="${x+8}" y="36" class="st sm2">убрали ${-p.x}</text>`;}else h+=Q(10,x-13,54);}
+  else if(type==='W'){h+=B(10,8,270,30,p.n);h+=B(10,44,88,30,p.x,'s2')+B(101,44,88,30,p.y,'s2')+B(192,44,88,30,'?','s3');}
+  else if(type==='D'){h+=B(10,8,200,30,p.n);h+=B(10,44,70,30,'− '+p.x,'s4')+B(83,44,127,30,'')+B(213,44,67,30,'+ '+p.y,'s2');h+=Q(83,197,78);}
+  else{h+=B(10,10,120,28,p.a)+B(10,46,210,28,p.b,'s2')+`<path d="M130 10 v28 M130 24 h90 M220 10 v28" class="sq"/><text x="175" y="20" class="st sqq" text-anchor="middle">?</text>`;}
+  return `<svg class="schm" viewBox="0 0 290 108" role="img" aria-label="Схема к задаче">${h}</svg>`;
+}
+const SC_ALT={G:(q)=>scheme('G',{a:q[1]||q[0],b:3,x:0}),W:q=>scheme('W',{n:q[0],x:q[1],y:q[2]||q[1]}),D:q=>scheme('D',{n:q[0],x:q[1],y:q[2]||q[1]}),C:q=>scheme('C',{a:Math.min(q[0],q[1]),b:Math.max(q[0],q[1])})};
+
+/* ---------- arcade: whack the mole ---------- */
+function startMole(){
+  const stn=ST.mole,L=S.set.level,GOAL=12;
+  setScreen(`<div class="wrap play">${topbar(stn,true)}
+   <div class="hud"><div class="lives" id="lives" aria-label="Жизни"></div><div class="qbig" id="mr" aria-live="polite" style="font-size:clamp(20px,5vw,28px)">Готова?</div><div class="score" id="msc">0 / ${GOAL}</div></div>
+   <div class="stage" style="padding:16px"><div class="holes" id="holes">${Array.from({length:9},(_,k)=>`<button class="hole" data-k="${k}" aria-label="Норка ${k+1}"><span></span></button>`).join('')}</div>
+    <div class="overlay" id="ov"><h3>Ударь крота</h3><p>Кротики показывают числа. Нажимай только на те числа, которые <b>есть в названной таблице умножения</b>. Чужое число отнимает жизнь.</p><button class="btn primary" id="go">Старт</button></div></div></div>`,'game');
+  bindTop();inGame=true;const sn=curSess=sess();const errs=[];
+  let state='ready',lives=livesMax(),hits=0,wrong=0,t=0,streak=0,acc=0;const moles=Array(9).fill(null);
+  const gap=[0,1100,850,650][L],ttl=[0,2800,2200,1700][L];
+  const inT=n=>n%t===0&&n<=t*10;
+  const hud=()=>{$('#lives').textContent=heartStr(lives);$('#msc').textContent=`${hits} / ${GOAL}`;};
+  const jr=fin=>jrec(sn,{item:'mole',section:stn.name,done:fin,ok:fin&&hits>=GOAL,miss:wrong,result:`верных ударов: ${hits} из ${GOAL}, ошибок: ${wrong}`,detail:errs.join('; ')||'без ошибок'});
+  const newRule=()=>{const T=S.set.tables;let n=pick(T);if(T.length>1)while(n===t)n=pick(T);t=n;$('#mr').textContent=`Бей числа из таблицы на ${t}`;moles.fill(null);paint();};
+  const paint=()=>document.querySelectorAll('.hole').forEach((b,k)=>{const m=moles[k];b.classList.toggle('up',!!m);b.classList.toggle('miss',!!(m&&m.bad));b.classList.toggle('hit',!!(m&&m.hit));b.querySelector('span').textContent=m?m.v:'';});
+  function end(){state='over';jr(true);const st=lives<=0?(hits>=GOAL/2?1:0):wrong===0?3:wrong<=2?2:1;finishStation('mole',hits,GOAL,st);setTimeout(()=>{if(scr==='game')endScreen('mole',hits,GOAL,st,`<p class="mini">Ошибок: ${wrong}.</p>`);},600);}
+  const iv=setInterval(()=>{if(paused||state!=='run')return;acc+=100;
+    moles.forEach((m,k)=>{if(m&&(m.t-=100)<=0)moles[k]=null;});
+    if(acc>=gap){acc=0;const free=moles.map((m,k)=>m?-1:k).filter(k=>k>=0);if(free.length>3){const k=pick(free);let v;if(Math.random()<.55)v=t*rnd(1,10);else{do{v=rnd(2,t*10);}while(v%t===0);}moles[k]={v,t:ttl};}}
+    paint();},100);
+  cleanup=()=>clearInterval(iv);
+  document.querySelectorAll('.hole').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();if(state!=='run'||paused)return;const k=+b.dataset.k,m=moles[k];if(!m||m.hit||m.bad)return;
+    if(inT(m.v)){m.hit=true;m.t=350;hits++;streak++;rec(t,m.v/t,true);bump(true);lives=lifeBonus(streak,lives);sfx.ok();hud();jr(false);if(hits>=GOAL)return end();if(hits%4===0)setTimeout(()=>{if(state==='run')newRule();},400);}
+    else{m.bad=true;m.t=500;wrong++;streak=0;bump(false);if(isFinite(lives))lives--;errs.push(`${m.v} нет в таблице на ${t}`);logMistake(stn.name,`Есть ли ${m.v} в таблице на ${t}?`,'да','нет');sfx.bad();hud();jr(false);if(lives<=0)return end();}
+    paint();save();}));
+  const begin=()=>{if(state!=='ready')return;$('#ov').hidden=true;state='run';hud();newRule();};
+  $('#go').onclick=begin;hud();window.onkeydown=e=>{if(e.key==='Enter'&&state==='ready'){e.preventDefault();begin();}};
+}
+
+/* ---------- arcade: memory pairs ---------- */
+function startMemo(){
+  const stn=ST.memo;const facts=[];let g=0;
+  while(facts.length<6&&g++<300){const t=pick(S.set.tables),m=rnd(2,9);if(!facts.some(f=>f.v===t*m))facts.push({t,m,v:t*m});}
+  const cards=shuffle(facts.flatMap((f,k)=>[{p:k,e:true,txt:`${f.t} · ${f.m}`,f},{p:k,e:false,txt:String(f.v),f}]));
+  setScreen(`<div class="wrap play">${topbar(stn,true)}
+   <div class="hud"><div class="score" id="mv" style="text-align:left">Ходов: 0</div><div class="qbig" style="font-size:20px">Найди пары: выражение и его ответ</div><div class="score" id="mp">0 / 6</div></div>
+   <div class="memo" id="memo">${cards.map((c,k)=>`<button class="mcard" data-k="${k}" aria-label="Карточка ${k+1}"><span>${c.txt}</span></button>`).join('')}</div>
+   <p class="mini">Открывай по две карточки. Если выражение и ответ совпали — пара остаётся открытой.</p></div>`,'game');
+  bindTop();inGame=true;const sn=curSess=sess();let open=[],moves=0,found=0,lock=false,missN=0;const errs=[];
+  const jr=fin=>jrec(sn,{item:'memo',section:stn.name,done:fin,ok:fin,miss:missN,result:`пар: ${found} из 6, ходов: ${moves}`,detail:errs.slice(-12).join('; ')||'без ошибок'});
+  document.querySelectorAll('.mcard').forEach(b=>b.onclick=()=>{if(lock||paused||b.classList.contains('open'))return;const k=+b.dataset.k;b.classList.add('open');open.push(k);sfx.tick();
+    if(open.length<2)return;moves++;$('#mv').textContent='Ходов: '+moves;const[a,c]=open.map(i=>cards[i]),els=open.map(i=>document.querySelector(`.mcard[data-k="${i}"]`));open=[];
+    if(a.p===c.p&&a.e!==c.e){found++;els.forEach(x=>x.classList.add('done'));rec(a.f.t,a.f.m,true);bump(true);sfx.ok();$('#mp').textContent=`${found} / 6`;jr(found===6);save();
+      if(found===6){const st=moves<=9?3:moves<=13?2:1;finishStation('memo',6,6,st);setTimeout(()=>{if(scr==='game')endScreen('memo',6,6,st,`<p class="mini">Ходов: ${moves}. Три звезды — за 9 ходов и меньше.</p>`);},700);}}
+    else{lock=true;if(a.e!==c.e){missN++;errs.push(`${a.e?a.txt:c.txt} и ${a.e?c.txt:a.txt} — не пара`);}jr(false);setTimeout(()=>{els.forEach(x=>x.classList.remove('open'));lock=false;},1000);}});
+}
+
+/* ---------- arcade: sort into tables ---------- */
+function startSort(){
+  const stn=ST.sort,L=S.set.level,TOTAL=12,T=shuffle(S.set.tables).slice(0,2).sort((a,b)=>a-b);
+  const inT=(n,t)=>n%t===0&&n<=t*10;const cat=n=>{const r=T.map(t=>inT(n,t));return r[0]&&!r[1]?0:(r[1]&&!r[0]?1:(!r[0]&&!r[1]?2:-1));};
+  const names=T.map(t=>`Таблица на ${t}`).concat(T.length>1?'Ни там, ни там':'Не из таблицы');const NONE=T.length>1?2:1;
+  const catOf=n=>T.length>1?cat(n):(inT(n,T[0])?0:1);
+  const items=[];let g=0;while(items.length<TOTAL&&g++<2000){const want=rnd(0,NONE),n=rnd(2,Math.max(...T)*10);if(catOf(n)===want&&!items.includes(n))items.push(n);}
+  setScreen(`<div class="wrap play">${topbar(stn,true)}
+   <div class="hud"><div class="lives" id="lives" aria-label="Жизни"></div><div class="qbig" style="font-size:20px">Куда положить число?</div><div class="score" id="ssc">0 / ${TOTAL}</div></div>
+   <div class="stage" style="padding:8px"><div class="lane" id="lane"><div class="fcard" id="fc" hidden></div></div>
+    <div class="overlay" id="ov"><h3>Сортировка</h3><p>Число падает сверху. Пока оно летит, нажми на корзину, в которую оно подходит. Не успела или ошиблась — минус жизнь.</p><button class="btn primary" id="go">Старт</button></div></div>
+   <div class="opts three" id="bask">${names.map((n,k)=>`<button class="opt" data-k="${k}" style="font-size:16px">${n}</button>`).join('')}</div></div>`,'game');
+  bindTop();inGame=true;const sn=curSess=sess();const errs=[];
+  let state='ready',lives=livesMax(),i=0,okc=0,y=0,wait=0,streak=0,alive=true;const dur=[0,9,7,5][L],fc=$('#fc'),lane=$('#lane');
+  const hud=()=>{$('#lives').textContent=heartStr(lives);$('#ssc').textContent=`${okc} / ${TOTAL}`;};
+  const jr=fin=>jrec(sn,{item:'sort',section:stn.name,done:fin,ok:fin&&starsFor(okc,TOTAL)>=1,miss:i-okc,result:`верно ${okc} из ${i} (всего ${TOTAL})`,detail:errs.join('; ')||'без ошибок'});
+  function end(){state='over';fc.hidden=true;jr(true);const st=finishStation('sort',okc,TOTAL);setTimeout(()=>{if(alive)endScreen('sort',okc,TOTAL,st);},600);}
+  function next(){if(i>=TOTAL||lives<=0)return end();y=0;fc.textContent=items[i];fc.hidden=false;fc.className='fcard';fc.style.left=(12+Math.random()*60)+'%';}
+  function answer(k){if(state!=='run'||wait>0||paused)return;const n=items[i],c=catOf(n),good=k===c;
+    T.forEach(t=>{if(inT(n,t))rec(t,n/t,good);});bump(good);
+    if(good){okc++;streak++;lives=lifeBonus(streak,lives);sfx.ok();fc.classList.add('good');}
+    else{streak=0;if(isFinite(lives))lives--;errs.push(`${n}: ${k<0?'не успела':names[k]}, верно — ${names[c]}`);logMistake(stn.name,`Куда положить ${n}?`,k<0?'не успела':names[k],names[c]);sfx.bad();fc.classList.add('badc');
+      const b=document.querySelector(`#bask .opt[data-k="${c}"]`);b.classList.add('right');setTimeout(()=>b.classList.remove('right'),800);}
+    i++;hud();jr(false);save();wait=.8;}
+  document.querySelectorAll('#bask .opt').forEach(b=>b.onclick=()=>answer(+b.dataset.k));
+  let last=performance.now(),raf=0;
+  function loop(now){if(!alive)return;const dt=Math.min(.05,(now-last)/1000);last=now;
+    if(state==='run'&&!paused){if(wait>0){wait-=dt;if(wait<=0)next();}else{y+=dt/dur;if(y>=1)answer(-1);else fc.style.top=(y*(lane.clientHeight-56))+'px';}}
+    raf=requestAnimationFrame(loop);}
+  raf=requestAnimationFrame(loop);cleanup=()=>{alive=false;cancelAnimationFrame(raf);};
+  const begin=()=>{if(state!=='ready')return;$('#ov').hidden=true;state='run';hud();next();};
+  $('#go').onclick=begin;hud();
+  window.onkeydown=e=>{if(e.key==='Enter'&&state==='ready'){e.preventDefault();begin();}else if(/^[1-3]$/.test(e.key)&&+e.key<=names.length)answer(+e.key-1);};
+}
+
+/* ---------- theory ---------- */
+const dots=(r,c,cls)=>`<div class="dots ${cls||''}" style="grid-template-columns:repeat(${c},18px)" role="img" aria-label="${r} ряда по ${c} точек">${'<i></i>'.repeat(r*c)}</div>`;
+const THEORY={
+ mul:{t:'Что такое умножение',h:`<p>Сумму <b>одинаковых</b> слагаемых можно записать короче — умножением.</p>
+  <div class="rule">a · b = a + a + … + a <small>(b раз)</small></div>
+  <p>Читаем: «по <b>a</b> взять <b>b</b> раз».</p>
+  <div class="ex"><div class="bags">${Array(3).fill('<div class="bag">'+'<span>🍎</span>'.repeat(4)+'</div>').join('')}</div><p>4 + 4 + 4 = 4 · 3 = 12<br><small>по 4 яблока взяли 3 раза</small></p></div>
+  <p>Если слагаемые разные, например 4 + 5 + 4, заменить сумму умножением нельзя.</p>`},
+ parts:{t:'Как называются числа при умножении',h:`<div class="rule">a · b = c</div>
+  <p><b>a</b> и <b>b</b> — <b>множители</b>. <b>c</b> — <b>произведение</b>. Выражение a · b тоже называют произведением.</p>
+  <div class="ex"><p>В равенстве 5 · 3 = 15 числа 5 и 3 — множители, 15 — произведение.</p></div>`},
+ comm:{t:'Переместительное свойство умножения',h:`<div class="rule">a · b = b · a</div>
+  <p>От перестановки множителей произведение не меняется.</p>
+  <div class="ex">${dots(3,4)}<p>По рядам: 4 + 4 + 4 = 4 · 3 = 12<br>По столбцам: 3 + 3 + 3 + 3 = 3 · 4 = 12<br><small>Точек столько же, значит 4 · 3 = 3 · 4.</small></p></div>
+  <p>Поэтому половину таблицы умножения учить не надо: знаешь 2 · 7 — знаешь и 7 · 2.</p>`},
+ area:{t:'Площадь прямоугольника',h:`<p>Площадь показывает, сколько клеток-единиц помещается в фигуре.</p>
+  <div class="rule">S = a · b</div>
+  <p>Чтобы найти площадь прямоугольника, длину умножают на ширину: клеток в ряду — на число рядов.</p>
+  <div class="ex">${dots(3,5)}<p>3 ряда по 5: 5 · 3 = 15<br>5 столбцов по 3: 3 · 5 = 15<br><small>Одна и та же фигура — поэтому a · b = b · a.</small></p></div>`},
+ zero:{t:'Умножение на 0 и на 1',h:`<div class="rule">a · 1 = a &nbsp;&nbsp; 1 · a = a</div>
+  <p>Если число взять один раз, получится то же число.</p>
+  <div class="rule">a · 0 = 0 &nbsp;&nbsp; 0 · a = 0</div>
+  <p>Если один из множителей равен нулю, произведение равно нулю.</p>
+  <div class="ex"><p>7 · 1 = 7 &nbsp;·&nbsp; 1 · 38 = 38 &nbsp;·&nbsp; 9 · 0 = 0 &nbsp;·&nbsp; 0 · 64 = 0</p></div>`},
+ table:{t:'Как запомнить таблицу умножения',h:`<p>Таблицу не зубрят, а <b>составляют</b>: каждый следующий ответ больше на одно и то же число.</p>
+  <div class="ex"><p>Таблица на 3: 3, 6, 9, 12, 15… — каждый раз прибавляем 3.</p></div>
+  <ul><li><b>На 2</b> — удвой число: сложи его с самим собой.</li><li><b>На 3</b> — удвой и прибавь число ещё раз.</li><li><b>На 4</b> — удвой, а потом удвой ещё раз.</li><li><b>На 5</b> — считай пятёрками; ответ кончается на 0 или 5.</li><li><b>На 9</b> — возьми десять раз и убери одно число.</li></ul>
+  <p>Не помнишь a · b? Переставь множители или посчитай шагами.</p>`},
+ order:{t:'Порядок действий',h:`<p>Над знаками действий пишут номера: что делаем первым, вторым, третьим.</p>
+  <ol><li>Сначала — действия <b>в скобках</b>.</li><li>Потом — <b>умножение</b>.</li><li>Потом — <b>сложение и вычитание</b> по порядку, слева направо.</li></ol>
+  <div class="ex"><p class="ordx"><span>20 −</span><sup>2</sup> <span>(7 +</span><sup>1</sup> <span>5)</span> &nbsp; 1) 7 + 5 = 12 &nbsp; 2) 20 − 12 = 8</p><p class="ordx"><span>20 −</span><sup>1</sup> <span>7 +</span><sup>2</sup> <span>5</span> &nbsp; 1) 20 − 7 = 13 &nbsp; 2) 13 + 5 = 18</p><p><small>Числа те же, а ответы разные: скобки меняют порядок.</small></p></div>
+  <div class="rule">a − (b + c) = a − b − c</div>
+  <p>Вычесть сумму — то же самое, что вычесть каждое слагаемое по очереди.</p>`},
+ magic:{t:'Магический квадрат',h:`<p>В магическом квадрате суммы чисел в каждой <b>строке</b>, каждом <b>столбце</b> и на обеих <b>диагоналях</b> одинаковые. Эта сумма называется магической.</p>
+  <p>Как решать: найди линию, где не хватает только одного числа. Из магической суммы вычти два известных числа.</p>
+  <div class="ex"><p>Сумма 15, в строке стоят 2 и 7. Третье число: 15 − (2 + 7) = 6.</p></div>`},
+ logic:{t:'Логическая таблица',h:`<p>Когда нужно узнать, кто где живёт или что кому досталось, рисуют таблицу.</p>
+  <ol><li>Если точно известно «да» — ставим ✓.</li><li>В той же строке и том же столбце остальное вычёркиваем: ✗.</li><li>Если известно «не…» — ставим ✗.</li><li>Когда в строке остаётся одна свободная клетка — там ✓.</li></ol>`},
+ euler:{t:'Круги Эйлера',h:`<p>Круг собирает всё, у чего есть общий признак. Если кругов два, получается четыре места:</p>
+  <ul><li>только в первом круге;</li><li>только во втором круге;</li><li>в <b>общей части</b> — подходит сразу под оба признака;</li><li>снаружи — не подходит ни под один.</li></ul>
+  <div class="ex"><p>12 ребят любят яблоки, 9 — груши, 4 любят и то, и другое.<br>Только яблоки: 12 − 4 = 8. Только груши: 9 − 4 = 5.<br>Всего ребят: 8 + 5 + 4 = 17.<br><small>Складывать 12 + 9 нельзя: тех, кто в середине, посчитаем дважды.</small></p></div>`},
+ tasks:{t:'Как решать задачу',h:`<ol><li>Прочитай задачу. Что известно? Что нужно найти?</li><li>Сделай схему или рисунок.</li><li>Составь выражение. «По a взяли b раз» — это a · b. «Убрали, съели, ушло» — вычитаем. «Добавили, принесли» — прибавляем.</li><li>Вычисли по порядку действий.</li><li>Проверь: похож ли ответ на правду?</li></ol>
+  <div class="ex"><p>3 тарелки по 4 плюшки и ещё 5 плюшек: 4 · 3 + 5 = 12 + 5 = 17.</p></div>`},
+};
+const TH_ORDER=['mul','parts','comm','area','zero','table','order','tasks','magic','logic','euler'];
+const TH_ST={rect:['area','comm'],tricks:['table'],build:['order'],mole:['table'],memo:['table','comm'],sort:['table'],bags:['mul','parts'],mirror:['comm','zero'],maze:['table','comm'],catch:['table','comm'],paren:['order'],magic:['magic'],logic:['logic'],euler:['euler'],kitchen:['tasks','order'],boss:['tasks']};
+const thCards=keys=>keys.map(k=>`<section class="card th"><h3>${THEORY[k].t}</h3>${THEORY[k].h}</section>`).join('');
+function theory(){
+  setScreen(`<div class="wrap play"><header class="topbar"><button class="btn ghost sm" id="back">← Карта</button><div class="tb-title"><span class="stk sm">📖</span><span>Теория</span></div></header>
+   <p class="lead">Правила, как в учебнике. Заглядывай сюда, если забыла, или нажимай «Правило» прямо во время игры.</p>${thCards(TH_ORDER)}</div>`,'theory');
+  $('#back').onclick=home;
+}
+function showRule(id){pauseGame(`<div class="thm" role="dialog" aria-modal="true" aria-label="Правило">${thCards(TH_ST[id]||['mul'])}<div class="row" style="justify-content:center"><button class="btn primary" id="resume">Понятно, продолжаем</button></div></div>`);}
+
+/* ---------- book: match expression to answer ---------- */
+let bookT=null;const bookSess={};
+function book(){
+  const pf=PF();if(bookT==null)bookT=S.set.tables[0]||2;const t=bookT;
+  const doneM=pf.book[t]||(pf.book[t]={});
+  const key=whoName()+'|'+t;const bs=bookSess[key]||(bookSess[key]={sn:sess(),bad:0});
+  const tiles=shuffle([1,2,3,4,5,6,7,8,9,10].filter(m=>!doneM[m]));
+  const slots=shuffle([1,2,3,4,5,6,7,8,9,10]);
+  const nDone=10-tiles.length;
+  setScreen(`<div class="wrap play"><header class="topbar"><button class="btn ghost sm" id="back">← Карта</button><div class="tb-title"><span class="stk sm">📘</span><span>Книга заклинаний</span></div></header>
+   <div class="tabs">${[2,3,4,5,6,7,8,9].map(x=>`<button class="tab${x===t?' on':''}" data-t="${x}">на ${x}</button>`).join('')}</div>
+   <section class="card panel"><h3>Таблица умножения на ${t}</h3>
+    <p>Страницы книги перепутались. Перетащи каждое выражение к его ответу. Можно и так: нажми на выражение, потом на ответ.</p>
+    <p class="mini" id="bcount">Собрано: ${nDone} из 10</p>
+    <div class="mtiles" id="mtiles">${tiles.map(m=>`<button class="mtile" data-m="${m}">${t} · ${m}</button>`).join('')||'<p class="fb-t" style="color:var(--ok)">Таблица собрана!</p>'}</div>
+    <div class="mslots">${slots.map(m=>doneM[m]?`<div class="mslot done" data-m="${m}">${t} · ${m} = ${t*m}</div>`:`<button class="mslot" data-m="${m}"><span class="hole"></span>= ${t*m}</button>`).join('')}</div>
+    <p class="tip"><b>Секрет:</b> ${TIPS[t]} Не помнишь — посчитай шагами по ${t}.</p>
+    <div class="row"><button class="btn ghost sm" id="bReset">Перемешать и собрать заново</button><button class="btn ghost sm" id="bTh">Теория</button></div>
+   </section></div>`,'book');
+  $('#back').onclick=home;$('#bTh').onclick=theory;
+  app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{bookT=+b.dataset.t;book();});
+  $('#bReset').onclick=()=>{pf.book[t]={};delete bookSess[key];save();book();};
+  let sel=null;
+  const jr=()=>{const n=Object.keys(pf.book[t]).length;jrec(bs.sn,{item:'book'+t,section:'Книга заклинаний: таблица на '+t,done:n===10,ok:n===10,result:`собрано ${n} из 10, ошибок: ${bs.bad}`,detail:bs.errs&&bs.errs.length?bs.errs.join('; '):'без ошибок'});};
+  function attempt(tile,slot){
+    if(!tile||!slot||slot.classList.contains('done'))return;
+    const m=+tile.dataset.m,sm=+slot.dataset.m;
+    if(t*m===t*sm){pf.book[t][m]=1;rec(t,m,true);save();sfx.ok();const d=document.createElement('div');d.className='mslot done pop';d.dataset.m=sm;d.textContent=`${t} · ${m} = ${t*m}`;slot.replaceWith(d);tile.remove();sel=null;
+      const n=Object.keys(pf.book[t]).length;$('#bcount').textContent=`Собрано: ${n} из 10`;jr();
+      if(n===10){sfx.win();checkBadges();$('#mtiles').innerHTML='<p class="fb-t" style="color:var(--ok)">Таблица собрана!</p>';}}
+    else{rec(t,m,false);bs.bad++;(bs.errs=bs.errs||[]).push(`${t} · ${m}: положили к ${t*sm}`);logMistake('Книга заклинаний',`${t} · ${m}`,t*sm,t*m);save();sfx.bad();slot.classList.add('shake');tile.classList.add('shake');setTimeout(()=>{slot.classList.remove('shake');tile.classList.remove('shake');},400);jr();}
+  }
+  const pickTile=tl=>{sel=sel===tl?null:tl;app.querySelectorAll('.mtile').forEach(x=>x.classList.toggle('sel',x===sel));};
+  app.querySelectorAll('.mslot:not(.done)').forEach(s=>s.onclick=()=>{if(sel){const tl=sel;pickTile(tl);attempt(tl,s);}});
+  app.querySelectorAll('.mtile').forEach(tl=>{
+    let st=null,ghost=null;
+    tl.addEventListener('pointerdown',e=>{if(e.button)return;st={x:e.clientX,y:e.clientY,drag:false};try{tl.setPointerCapture(e.pointerId);}catch(x){}});
+    tl.addEventListener('pointermove',e=>{if(!st)return;if(!st.drag&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>8){st.drag=true;ghost=tl.cloneNode(true);ghost.classList.add('ghost');document.body.appendChild(ghost);tl.classList.add('lifting');}
+      if(st.drag){ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';const el=document.elementFromPoint(e.clientX,e.clientY);const sl=el&&el.closest?el.closest('.mslot:not(.done)'):null;app.querySelectorAll('.mslot.over').forEach(x=>x.classList.remove('over'));if(sl)sl.classList.add('over');}});
+    const up=e=>{if(!st)return;const was=st.drag;st=null;if(ghost){ghost.remove();ghost=null;}tl.classList.remove('lifting');app.querySelectorAll('.mslot.over').forEach(x=>x.classList.remove('over'));
+      if(was){tl.dataset.dragged='1';setTimeout(()=>{delete tl.dataset.dragged;},50);const el=document.elementFromPoint(e.clientX,e.clientY);const sl=el&&el.closest?el.closest('.mslot:not(.done)'):null;if(sl)attempt(tl,sl);}};
+    tl.addEventListener('pointerup',up);tl.addEventListener('pointercancel',()=>{st=null;if(ghost){ghost.remove();ghost=null;}tl.classList.remove('lifting');});
+    tl.onclick=()=>{if(tl.dataset.dragged)return;pickTile(tl);};
+  });
+}
+const TIPS={2:'умножить на 2 — значит удвоить: сложи число с самим собой.',3:'сначала удвой, потом прибавь число ещё раз.',4:'удвой, а потом удвой ещё раз.',5:'считай пятёрками; ответ всегда кончается на 0 или 5.',6:'возьми пять раз и добавь ещё один.',7:'возьми пять раз и добавь ещё два.',8:'удвой три раза подряд.',9:'возьми десять раз и убери одно число.'};
+
+/* ---------- journal ---------- */
+const jStat=r=>r.ok?['ok','✓ выполнено']:r.done?['bad','✗ не получилось']:['open','⏸ не закончено'];
+const jDt=t=>{const d=new Date(t);return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});};
+const jSec=r=>String(r.section).split(':')[0];
+const jFiltered=()=>logRows().filter(r=>(!LOG.who||r.player===LOG.who)&&(!LOG.sec||jSec(r)===LOG.sec)&&(!LOG.open||!r.ok));
+const jCells=r=>[jDt(r.upd||r.at),r.player,r.section,jStat(r)[1].slice(2),r.result,r.miss||0,r.hints||0,r.sec?fmtT(r.sec):'',r.detail];
+const ADV={bags:'Показывать умножение на предметах: «по 3 взять 4 раза».',rect:'Рисовать прямоугольники на клетчатой бумаге и считать клетки рядами и столбцами.',mirror:'Повторить: от перестановки множителей произведение не меняется; правила для 0 и 1.',tricks:'Тренировать приёмы: удвоение, «пять раз и ещё один», «десять раз без одного».',maze:'Повторять таблицу короткими подходами, без спешки.',catch:'Повторять таблицу; снизить сложность на пульте.',mole:'Считать шагами: 3, 6, 9… — какие числа есть в таблице.',memo:'Проговаривать выражение вслух, прежде чем искать ответ.',sort:'Считать шагами и проверять, попадает ли число в ряд.',paren:'Ставить номера над знаками: сначала скобки, потом по порядку.',build:'Пробовать оба варианта скобок и сравнивать ответы.',magic:'Начинать с линии, где известны все три числа, — это магическая сумма.',logic:'Вести таблицу: ✓ там, где точно да, и сразу ✗ в строке и столбце.',euler:'Проверять каждый признак отдельно; в задачах не считать середину дважды.',kitchen:'Читать условие по частям и рисовать схему: что известно, что ищем.',boss:'Решать олимпиадные задачи с рисунком и проверять ответ по условию.'};
+function report(p){
+  const rows=logRows().filter(r=>r.player===p);if(!rows.length)return `${p}: пока нет записей.`;
+  const okS=new Set(rows.filter(r=>r.ok).map(r=>r.item)),by={};let hints=0;
+  rows.forEach(r=>{hints+=r.hints||0;if(ST[r.item]){by[r.item]=(by[r.item]||0)+(r.miss||0);}});
+  const top=Object.entries(by).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const good=STATIONS.filter(s=>okS.has(s.id)&&(by[s.id]||0)<=2).map(s=>s.name);
+  const open=STATIONS.filter(s=>!okS.has(s.id)&&rows.some(r=>r.item===s.id)).map(s=>s.name);
+  const pf=S.prof[p];const hard=pf?Object.entries(pf.facts).filter(([k,f])=>f.bad>0&&f.bad>=f.ok*.5).sort((a,b)=>b[1].bad-a[1].bad).slice(0,6).map(x=>x[0].replace('·',' · ')):[];
+  const bd=pf&&pf.badges?BADGES.filter(b=>pf.badges[b[0]]).map(b=>b[1]+' «'+b[2]+'»'):[];
+  return [`${p} — отчёт по «Терновому королевству»`,`Пройдено полянок: ${STATIONS.filter(s=>okS.has(s.id)).length} из ${STATIONS.length}.`,
+    good.length?'Хорошо получается: '+good.join(', ')+'.':'',
+    top.length?'Над чем поработать:\n'+top.map(([k,n])=>`• ${ST[k].name} (ошибок: ${n}) — ${ADV[k]||''}`).join('\n'):'Ошибок почти нет — отлично!',
+    hard.length?'Трудные примеры таблицы: '+hard.join(', ')+'.':'',bd.length?'Значки: '+bd.join(', ')+'.':'',`Подсказок взято: ${hints}.`,
+    open.length?'Начато, но не закончено: '+open.join(', ')+'.':''].filter(Boolean).join('\n');
+}
+const J_HEAD=['Когда','Игрок','Раздел','Статус','Результат','Ошибок','Подсказок','Время','Подробности'];
+function journal(keep){
+  const y=window.scrollY,rows=logRows();
+  if(LOG.who===null)LOG.who=S.who||'';
+  const ps=uniq(rows.map(r=>String(r.player)).concat(S.roster)),ss=uniq(rows.map(jSec));
+  const opt=(list,val,all)=>`<option value="">${all}</option>`+list.map(x=>`<option value="${esc(x)}" ${x===val?'selected':''}>${esc(x)}</option>`).join('');
+  const mine=rows.filter(r=>!LOG.who||r.player===LOG.who);
+  const okSet=new Set(mine.filter(r=>r.ok).map(r=>r.item)),stSet=new Set(mine.map(r=>r.item));
+  const grp=[['Выполнено','all',STATIONS.filter(s=>okSet.has(s.id))],['Начато, не закончено','',STATIONS.filter(s=>!okSet.has(s.id)&&stSet.has(s.id))],['Ещё не начато','',STATIONS.filter(s=>!stSet.has(s.id))]];
+  const f=jFiltered();
+  const html=`<div class="wrap play"><header class="topbar"><button class="btn ghost sm" id="back">← Карта</button><div class="tb-title"><span class="stk sm">📒</span><span>Журнал решений</span></div></header>
+  <p class="lead" style="max-width:70ch">${LOG.db&&LOG.dbWrite?'Журнал хранится вместе с игрой: его видно на любом устройстве, где эта ссылка открыта под вашим аккаунтом.':'Журнал хранится в этом браузере на этом устройстве. Чтобы сохранить его надолго, скачайте таблицу.'} Запись обновляется после каждого ответа, поэтому брошенная на середине игра тоже видна.</p>
+  <section class="card panel">
+   <div class="logbar"><label for="logWho">Игрок</label><select id="logWho">${opt(ps,LOG.who,'Все')}</select><label for="logSec">Раздел</label><select id="logSec">${opt(ss,LOG.sec,'Все разделы')}</select>
+    <label for="logSt">Показать</label><select id="logSt"><option value="">Все записи</option><option value="1" ${LOG.open?'selected':''}>Только не доделанное</option></select></div>
+   <div class="row"><button class="btn primary sm" id="logRep">Отчёт для родителей</button><button class="btn ghost sm" id="logDl">Скачать таблицу</button><button class="btn ghost sm" id="logCopy">Скопировать</button><button class="btn ghost sm" id="logClear">Очистить</button></div>
+   ${LOG.confirm?`<div class="fb-x">Удалить все записи журнала? Это нельзя отменить.<div class="row" style="margin-top:8px"><button class="btn danger sm" id="logYes">Удалить</button><button class="btn ghost sm" id="logNo">Отмена</button></div></div>`:''}
+   ${LOG.rep?`<div class="fb-x" style="max-width:none"><pre class="rep">${esc(LOG.rep)}</pre><div class="row" style="margin-top:8px"><button class="btn primary sm" id="repCopy">Скопировать отчёт</button><button class="btn ghost sm" id="repClose">Закрыть</button></div></div>`:''}
+   <h3>Что осталось сделать${LOG.who?' — '+esc(LOG.who):''}</h3>
+   <div class="todo">${grp.map(([n,c,l])=>`<div class="tcard ${c&&l.length===STATIONS.length?'all':''}"><h4><span>${n}</span><span>${l.length}</span></h4><p>${l.length?l.map(s=>esc(s.name)).join(', '):'—'}</p></div>`).join('')}</div>
+   <h3>Все записи</h3>
+   <div class="tablewrap">${f.length?`<table class="log"><thead><tr>${J_HEAD.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${f.map(r=>{const[c,t]=jStat(r);return `<tr><td class="num">${jDt(r.upd||r.at)}</td><td>${esc(r.player)}</td><td>${esc(r.section)}</td><td><span class="jp ${c}">${t}</span></td><td><b>${esc(r.result)}</b></td><td class="num">${r.miss||0}</td><td class="num">${r.hints||0}</td><td class="num">${r.sec?fmtT(r.sec):'—'}</td><td>${esc(r.detail)}</td></tr>`;}).join('')}</tbody></table>`:'<p class="mini" style="padding:16px;text-align:center">Пока пусто. Начните любую игру — запись появится здесь после первого ответа.</p>'}</div>
+  </section></div>`;
+  if(keep&&scr==='log'){app.innerHTML=html;window.scrollTo(0,y);}else setScreen(html,'log');
+  $('#back').onclick=()=>{LOG.confirm=false;LOG.rep='';home();};
+  $('#logWho').onchange=e=>{LOG.who=e.target.value;journal(true);};$('#logSec').onchange=e=>{LOG.sec=e.target.value;journal(true);};$('#logSt').onchange=e=>{LOG.open=e.target.value;journal(true);};
+  $('#logDl').onclick=async()=>{const q=v=>'"'+String(v).replace(/"/g,'""')+'"';const name='журнал-тернового-королевства.csv',data='﻿'+[J_HEAD,...jFiltered().map(jCells)].map(l=>l.map(q).join(';')).join('\r\n');
+    let dl=null;try{dl=await (window.claude&&window.claude.use?window.claude.use('downloads'):null);}catch(e){}
+    if(dl){try{await dl.save({filename:name,data});toast('Таблица сохранена');}catch(e){if(!e||e.code!=='declined')toast('Не получилось скачать. Нажмите «Скопировать» и вставьте в таблицу.');}return;}
+    try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'text/csv'}));a.download=name;document.body.appendChild(a);a.click();a.remove();}catch(e){toast('Не получилось скачать. Нажмите «Скопировать».');}};
+  $('#logCopy').onclick=()=>{const t=[J_HEAD,...jFiltered().map(jCells)].map(l=>l.join('\t')).join('\n');const p=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject();p.then(()=>toast('Скопировано — можно вставить в Excel или письмо'),()=>toast('Не получилось скопировать'));};
+  $('#logRep').onclick=()=>{const ps=LOG.who?[LOG.who]:uniq(logRows().map(r=>String(r.player)));LOG.rep=ps.map(report).join('\n\n')||'Пока нет записей.';journal(true);};
+  if(LOG.rep){$('#repClose').onclick=()=>{LOG.rep='';journal(true);};$('#repCopy').onclick=()=>{const p=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(LOG.rep):Promise.reject();p.then(()=>toast('Отчёт скопирован — можно отправить родителям'),()=>toast('Не получилось скопировать. Выделите текст вручную.'));};}
+  $('#logClear').onclick=()=>{LOG.confirm=true;journal(true);};
+  if(LOG.confirm){$('#logNo').onclick=()=>{LOG.confirm=false;journal(true);};
+    $('#logYes').onclick=async()=>{LOG.confirm=false;LOG.local=[];saveLocal();const rem=LOG.remote.slice();if(LOG.db){for(const r of rem){try{await LOG.db.doc('results/'+r.id).delete();}catch(e){toast('Часть записей удалить не удалось');break;}}}if(!LOG.db)LOG.remote=[];journal(true);toast('Журнал очищен');};}
+}
+
+/* ---------- for super professionals: teacher console ---------- */
+let confirmReset=false;
+function proGate(){
+  if(!S.set.pin)return pro();
+  const m=document.createElement('div');m.className='modal';m.id='helloM';
+  m.innerHTML=`<form class="card end" role="dialog" aria-modal="true" aria-labelledby="pinT"><h2 id="pinT">Код учителя</h2><input class="txt" id="pinIn" inputmode="numeric" autocomplete="off" aria-label="Код учителя"><p class="toast" id="pinErr" hidden>Неверный код.</p><div class="row" style="justify-content:center"><button class="btn primary">Открыть</button><button type="button" class="btn ghost" id="pinNo">Отмена</button></div></form>`;
+  document.body.appendChild(m);m.querySelector('#pinIn').focus();m.querySelector('#pinNo').onclick=()=>m.remove();
+  m.querySelector('form').onsubmit=e=>{e.preventDefault();if(m.querySelector('#pinIn').value.trim()===S.set.pin){m.remove();pro();}else m.querySelector('#pinErr').hidden=false;};
+}
+function pro(keep){
+  const y=window.scrollY,T=S.set,pf=PF();
+  const seg=(key,list)=>`<div class="seg" data-seg="${key}">${list.map(([v,n])=>`<button data-v="${v}" aria-pressed="${String(T[key])===String(v)}">${n}</button>`).join('')}</div>`;
+  const heatRows=[2,3,4,5,6,7,8,9].map(t=>`<tr><th>${t}</th>${Array.from({length:10},(_,k)=>{const m=k+1,f=pf.facts[t+'·'+m];if(!f||f.ok+f.bad===0)return `<td title="${t} · ${m}: не встречалось">${t*m}</td>`;const r=f.ok/(f.ok+f.bad);const c=r>=.9?'g':r>=.7?'m':'b';return `<td class="${c}" title="${t} · ${m}: верно ${f.ok} из ${f.ok+f.bad}">${f.ok}/${f.ok+f.bad}</td>`;}).join('')}</tr>`).join('');
+  const html=`<div class="wrap play"><header class="topbar"><button class="btn ghost sm" id="back">← Карта</button><div class="tb-title"><span class="stk sm">🎓</span><span>Для супер-профессионалов</span></div><button class="btn ghost sm" id="toLog">Журнал решений</button></header>
+  <section class="card panel"><h3>Пульт учителя</h3>
+    <div class="set-row"><span>Ученики<small>Имя можно исправить. У каждого ученика свои звёзды и своя карта ошибок.</small></span>
+      <div class="rlist">${S.roster.map((n,i)=>`<div class="rrow"><input class="txt" id="kid-${i}" data-i="${i}" value="${esc(n)}" maxlength="16" aria-label="Имя ученика ${i+1}"><button class="btn ghost sm" data-del="${i}" aria-label="Убрать ${esc(n)}">✕</button></div>`).join('')}
+      <form class="rrow" id="addKid"><input class="txt" id="newKid" maxlength="16" placeholder="Новое имя" aria-label="Новое имя"><button class="btn sm">Добавить</button></form></div></div>
+    <div class="set-row"><span>Кто сейчас играет<small>Ниже показаны данные этого ученика</small></span><div class="chips">${(S.roster.length?S.roster:[whoName()]).map(n=>`<button class="chip${n===whoName()?' on':''}" data-who="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>
+    <div class="set-row"><span>Таймер<small>Секундомер считает время станции. Обратный отсчёт даёт время на каждое задание</small></span>${seg('timer',[['off','Без таймера'],['up','Секундомер'],['down','Обратный отсчёт']])}</div>
+    <div class="set-row"><span>Время на задание<small>Для обратного отсчёта. На квадратах, логике и задачах времени даётся в 2–5 раз больше</small></span><select id="s-secs" class="txt">${[[15,'15 секунд'],[30,'30 секунд'],[45,'45 секунд'],[60,'1 минута'],[90,'1,5 минуты'],[120,'2 минуты']].map(([v,n])=>`<option value="${v}" ${T.secs===v?'selected':''}>${n}</option>`).join('')}</select></div>
+    <div class="set-row"><span>Жизни<small>В лабиринте и перехвате</small></span>${seg('lives',[[3,'3'],[5,'5'],[7,'7'],[0,'Без счёта']])}</div>
+    <div class="set-row"><span>Какие таблицы тренируем<small>Лабиринт, перехват, мешочки и зеркало берут примеры отсюда</small></span><div class="chips">${[2,3,4,5,6,7,8,9].map(t=>`<button class="chip${T.tables.includes(t)?' on':''}" data-t="${t}" aria-pressed="${T.tables.includes(t)}">${t}</button>`).join('')}</div></div>
+    <div class="set-row"><span>Сложность<small>Скорость колючек и облаков, длина выражений, пустые клетки в квадрате</small></span>${seg('level',[[1,'Лёгкая'],[2,'Средняя'],[3,'Трудная']])}</div>
+    <div class="set-row"><span>Умножение в выражениях со скобками<small>Включите, когда пройдёте правило «сначала умножение»</small></span><button class="sw${T.parenMul?' on':''}" data-sw="parenMul" role="switch" aria-checked="${T.parenMul}" aria-label="Умножение в выражениях"></button></div>
+    <div class="set-row"><span>Полянки по порядку<small>Следующая откроется только после звезды на предыдущей</small></span><button class="sw${T.seq?' on':''}" data-sw="seq" role="switch" aria-checked="${T.seq}" aria-label="Полянки по порядку"></button></div>
+    <div class="set-row"><span>Код учителя<small>По желанию. С кодом этот раздел не откроют без вас</small></span><input class="txt" id="s-pin" maxlength="6" inputmode="numeric" placeholder="без кода" autocomplete="off" value="${esc(T.pin||'')}" style="width:140px"></div>
+    <div class="set-row"><span>Звуки</span><button class="sw${T.sound?' on':''}" data-sw="sound" role="switch" aria-checked="${T.sound}" aria-label="Звуки"></button></div>
+    <p class="mini">Настройки сохраняются в этом браузере и действуют со следующего задания или новой игры.</p>
+  </section>
+  <section class="card panel"><h3>Карта таблицы умножения — ${esc(whoName())}</h3>
+    <p class="mini">Строка — таблица, столбец — второй множитель. В клетке: верно / всего. Игра чаще задаёт примеры с ошибками.</p>
+    <div class="heatwrap"><table class="heat"><thead><tr><th></th>${Array.from({length:10},(_,k)=>`<th>·${k+1}</th>`).join('')}</tr></thead><tbody>${heatRows}</tbody></table></div>
+    <div class="legend"><span><i style="background:rgba(98,227,166,.75)"></i>90% и выше</span><span><i style="background:rgba(243,201,108,.8)"></i>70–89%</span><span><i style="background:rgba(255,125,157,.85)"></i>меньше 70%</span><span><i style="background:var(--night)"></i>ещё не было</span></div>
+  </section>
+  <section class="card panel"><h3>Последние ошибки — ${esc(whoName())}</h3>
+    ${pf.mistakes.length?`<ol class="mlist">${pf.mistakes.slice(0,20).map(m=>`<li><span class="mini">${jDt(m.d)} · ${esc(m.s)}</span><br>${esc(m.q.slice(0,140))} — ответ <em>${esc(m.g)}</em>, верно <strong>${esc(m.r)}</strong></li>`).join('')}</ol>`:'<p class="mini">Ошибок пока нет. Полная история игр — в журнале решений.</p>'}
+  </section>
+  <details class="card"><summary>Как учить умножение по Петерсон</summary><div class="method">
+    <h3>1. Сначала смысл, потом таблица</h3>
+    <p>В курсе Петерсон a · b читается как «по a взять b раз»: a + a + … + a. Пусть ребёнок сам переводит картинку в сумму, сумму в произведение и обратно. Это полянка «Волшебные мешочки». Хороший вопрос дома: «Покажи мне 3 · 4 на пуговицах».</p>
+    <h3>2. Переместительное свойство экономит половину таблицы</h3>
+    <p>Зная 2 · 7, ребёнок знает и 7 · 2. Отдельно проговорите два правила: любое число · 1 — само число, любое число · 0 — ноль.</p>
+    <h3>3. Стратегии вместо зубрёжки</h3>
+    <ul><li>×2 — удвой число.</li><li>×4 — удвой дважды.</li><li>×3 — удвой и добавь ещё одну группу.</li><li>×5 — половина от ×10.</li><li>×9 — ×10 и вычесть одну группу.</li></ul>
+    <h3>4. Точность раньше скорости</h3>
+    <p>Порядок: теория и мешочки, зеркало, книга заклинаний, потом лабиринт и перехват. Если в аркадах много ошибок, снизьте сложность и уберите обратный отсчёт.</p>
+    <h3>5. Коротко и каждый день</h3>
+    <p>10–15 минут в день дают больше, чем час раз в неделю. Смотрите карту выше и разбирайте красные клетки на предметах.</p>
+    <h3>6. Скобки и порядок действий</h3>
+    <p>Как в учебнике: над каждым знаком ставим номер действия. Умножение раньше сложения включайте переключателем, когда оно появится на уроках.</p>
+    <h3>7. Ошибка — повод поговорить</h3>
+    <p>После каждой ошибки игра показывает решение. Попросите ребёнка объяснить его своими словами.</p>
+  </div></details>
+  <section class="card panel"><h3>Сброс</h3>
+    ${confirmReset?`<p>Звёзды, кристаллы, книга заклинаний и карта ошибок ученика «${esc(whoName())}» удалятся. Журнал и настройки останутся.</p><div class="row"><button class="btn danger" id="rsYes">Да, сбросить</button><button class="btn ghost" id="rsNo">Отмена</button></div>`:`<div class="row"><button class="btn ghost" id="rs">Сбросить прогресс ученика</button></div>`}
+  </section></div>`;
+  if(keep&&scr==='pro'){app.innerHTML=html;window.scrollTo(0,y);}else setScreen(html,'pro');
+  const re=()=>{save();pro(true);};
+  $('#back').onclick=()=>{confirmReset=false;home();};$('#toLog').onclick=()=>journal();
+  app.querySelectorAll('.seg').forEach(sg=>sg.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=sg.dataset.seg;T[k]=k==='timer'?b.dataset.v:+b.dataset.v;re();}));
+  $('#s-secs').onchange=e=>{T.secs=+e.target.value;save();};$('#s-pin').onchange=e=>{T.pin=e.target.value.trim();save();toast(T.pin?'Код учителя сохранён':'Код учителя убран');};
+  app.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{T[b.dataset.sw]=!T[b.dataset.sw];re();});
+  app.querySelectorAll('.chip[data-t]').forEach(b=>b.onclick=()=>{const t=+b.dataset.t,has=T.tables.includes(t);if(has&&T.tables.length===1)return;T.tables=has?T.tables.filter(x=>x!==t):[...T.tables,t].sort((a,b)=>a-b);re();});
+  app.querySelectorAll('.chip[data-who]').forEach(b=>b.onclick=()=>{const n=b.dataset.who;if(S.roster.includes(n)){S.who=n;re();}});
+  const norm=v=>v.trim().replace(/\s+/g,' ').slice(0,16);
+  app.querySelectorAll('.rrow input[data-i]').forEach(inp=>inp.onchange=()=>{const i=+inp.dataset.i,old=S.roster[i],nw=norm(inp.value);if(!nw||nw===old||S.roster.includes(nw)){inp.value=old;return;}S.roster[i]=nw;if(S.prof[old]){S.prof[nw]=S.prof[old];delete S.prof[old];}if(S.who===old)S.who=nw;re();});
+  app.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const n=S.roster[+b.dataset.del];S.roster.splice(+b.dataset.del,1);if(S.who===n)S.who=S.roster[0]||'';re();});
+  $('#addKid').onsubmit=e=>{e.preventDefault();const n=norm($('#newKid').value);if(!n||S.roster.includes(n))return;S.roster.push(n);if(!S.who)S.who=n;re();};
+  if(confirmReset){$('#rsYes').onclick=()=>{S.prof[S.who||'_']=DEFP();confirmReset=false;re();};$('#rsNo').onclick=()=>{confirmReset=false;pro(true);};}
+  else $('#rs').onclick=()=>{confirmReset=true;pro(true);};
+}
+
+window.__tern={genRect,genTricks,genBuild,genBags,genMirror,genParen,genMagic,genLogic,genEuler,genKitchen,genBoss,S:()=>S};
+home();if(!S.who)hello();
+})();
+</script>
+</body>
+</html>
